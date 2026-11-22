@@ -1,427 +1,509 @@
 <!DOCTYPE html>
-<html lang="es" class="dark">
+<html lang="es">
 <head>
-  <base target="_top">
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>UPAO GameLab | Repositorio de Gamificación</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-  <script>
-    tailwind.config = {
-      darkMode: 'class',
-      theme: { extend: {
-        fontFamily: { sans: ['Inter', 'sans-serif'], display: ['Space Grotesk', 'sans-serif'] },
-        colors: { upao: { blue: '#004A99', light: '#0072CE', orange: '#F36F21' } }
-      } }
-    };
-  </script>
-  <style>
-    body {
-      background-color: #090D16; color: #F3F4F6;
-      background-image: radial-gradient(at 0% 0%, rgba(0,74,153,.22) 0, transparent 50%),
-                        radial-gradient(at 100% 0%, rgba(6,182,212,.12) 0, transparent 50%);
-    }
-    .glass-panel { background: rgba(17,24,39,.78); backdrop-filter: blur(12px); border: 1px solid rgba(55,65,81,.5); }
-    .grid-pattern { background-size: 32px 32px; background-image: radial-gradient(circle, rgba(255,255,255,.06) 1px, transparent 1px); }
-    .card-hover { transition: transform .25s ease, box-shadow .25s ease, border-color .25s ease; }
-    .card-hover:hover { transform: translateY(-4px); border-color: rgba(6,182,212,.6); box-shadow: 0 12px 30px -10px rgba(6,182,212,.25); }
-    .chip { display:inline-flex; align-items:center; gap:.3rem; padding:.15rem .55rem; border-radius:9999px; font-size:11px; border:1px solid rgba(71,85,105,.7); background:rgba(15,23,42,.8); color:#cbd5e1; }
-    .sel { width:100%; background:#0f172a; border:1px solid #334155; border-radius:.75rem; padding:.5rem .75rem; font-size:.8rem; color:#e2e8f0; }
-    .sel:focus { outline:none; border-color:#06b6d4; }
-    .lbl { display:block; font-size:10px; text-transform:uppercase; letter-spacing:.05em; color:#94a3b8; margin-bottom:.25rem; font-weight:600; }
-    .pre { white-space: pre-line; }
-    @media print {
-      body * { visibility: hidden; }
-      #insignia-imprimible, #insignia-imprimible * { visibility: visible; }
-      #insignia-imprimible { position: fixed; left: 0; top: 0; width: 100%; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-    }
-  </style>
-</head>
-<body class="min-h-screen flex flex-col antialiased">
-
-  <div id="toasts" class="fixed bottom-5 right-5 z-[60] flex flex-col gap-2 pointer-events-none"></div>
-
-  <div id="banner-demo" class="hidden bg-amber-500/15 border-b border-amber-500/30 text-amber-200 text-xs text-center py-2 px-4">
-    <i class="fa-solid fa-flask mr-1"></i> Modo demostración: datos ficticios. Pega el enlace /exec de Apps Script en API_URL para mostrar los proyectos aprobados del Sheet.
-  </div>
-
-  <!-- HEADER -->
-  <header class="sticky top-0 z-40 glass-panel border-b border-slate-800">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-wrap items-center justify-between py-3 gap-4">
-      <div class="flex items-center gap-3 cursor-pointer" data-vista="catalogo">
-        <div class="bg-upao-blue px-3 py-1.5 rounded-lg border border-blue-400/30 flex items-center gap-2">
-          <span class="font-display font-bold text-white tracking-wider text-sm sm:text-base">UPAO</span>
-          <span class="h-4 w-px bg-blue-300/40"></span>
-          <span class="text-[11px] text-blue-100 uppercase hidden sm:inline">Ciencias de la Comunicación</span>
-        </div>
-        <div>
-          <div class="flex items-center gap-2">
-            <h1 class="font-display font-bold text-lg sm:text-xl text-white">Game<span class="text-cyan-400">Lab</span></h1>
-            <span class="text-[10px] font-semibold uppercase px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/30">COMD-102</span>
-          </div>
-          <p class="text-xs text-slate-400 hidden md:block">Taller de Gamificación · Repositorio histórico de proyectos</p>
-        </div>
-      </div>
-
-      <div class="flex items-center gap-3 bg-slate-900/90 border border-slate-800 px-3.5 py-2 rounded-xl">
-        <div id="hud-icono" class="w-8 h-8 rounded-lg bg-slate-800 border border-slate-700 flex items-center justify-center text-amber-400"><i class="fa-solid fa-compass"></i></div>
-        <div>
-          <div class="flex items-center gap-2">
-            <span id="hud-rango" class="text-xs font-semibold text-slate-200">Explorador Novato</span>
-            <span id="hud-cuenta" class="text-[11px] font-mono text-cyan-400">0/3</span>
-          </div>
-          <div class="w-28 sm:w-36 h-1.5 bg-slate-800 rounded-full overflow-hidden mt-1">
-            <div id="hud-barra" class="h-full bg-gradient-to-r from-cyan-500 to-amber-400 transition-all duration-500" style="width:0%"></div>
-          </div>
-        </div>
-        <button data-accion="mision" title="¿Cómo funciona?" class="text-slate-400 hover:text-cyan-400 p-1.5"><i class="fa-solid fa-circle-question"></i></button>
-      </div>
-
-      <nav class="flex flex-wrap items-center gap-1.5">
-        <button data-vista="catalogo" class="nav-btn px-3 py-2 rounded-xl text-xs sm:text-sm font-medium border transition"><i class="fa-solid fa-layer-group mr-1.5"></i>Proyectos</button>
-        <button data-vista="salon" class="nav-btn px-3 py-2 rounded-xl text-xs sm:text-sm font-medium border transition"><i class="fa-solid fa-trophy text-amber-400 mr-1.5"></i>Salón de la Fama</button>
-        <button data-vista="portafolio" class="nav-btn px-3 py-2 rounded-xl text-xs sm:text-sm font-medium border transition"><i class="fa-solid fa-id-card text-blue-400 mr-1.5"></i>Portafolios</button>
-        <button data-vista="publicar" class="nav-btn px-3 py-2 rounded-xl text-xs sm:text-sm font-medium border transition"><i class="fa-solid fa-cloud-arrow-up text-emerald-400 mr-1.5"></i>Publicar</button>
-      </nav>
-    </div>
-  </header>
-
-  <main class="flex-grow">
-    <div id="cargando" class="max-w-7xl mx-auto px-4 py-24 text-center text-slate-400">
-      <i class="fa-solid fa-circle-notch fa-spin text-3xl text-cyan-400 mb-3"></i>
-      <p class="text-sm">Cargando el repositorio…</p>
-    </div>
-
-    <!-- VISTA: CATÁLOGO -->
-    <section id="vista-catalogo" class="vista hidden">
-      <div class="border-b border-slate-800/80 grid-pattern">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14 grid lg:grid-cols-12 gap-8 items-center">
-          <div class="lg:col-span-8 space-y-4">
-            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-950/80 border border-blue-500/30 text-blue-300 text-xs font-medium">
-              <span class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span> Repositorio curado · Memoria del taller ciclo a ciclo
-            </div>
-            <h2 class="font-display text-3xl sm:text-4xl lg:text-5xl font-bold text-white leading-tight">
-              Diseño de experiencias lúdicas que transforman la <span class="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-400 to-amber-300">comunicación y el comportamiento</span>
-            </h2>
-            <p class="text-slate-300 text-sm sm:text-base max-w-2xl leading-relaxed">
-              Explora los proyectos integradores de ciclos anteriores: el prototipo jugable, su ruta metodológica completa (MDA, Diseño 6D y 4 Fases, Gamification Model Canvas, validación GAMEFULQUEST/GAMEX) y lo que cada equipo aprendió.
-            </p>
-          </div>
-          <div class="lg:col-span-4 grid grid-cols-2 gap-3">
-            <div class="glass-panel p-4 rounded-2xl"><div class="text-cyan-400 text-xl mb-1"><i class="fa-solid fa-gamepad"></i></div><div id="kpi-proyectos" class="font-display text-3xl font-bold text-white">0</div><div class="text-xs text-slate-400">Proyectos publicados</div></div>
-            <div class="glass-panel p-4 rounded-2xl"><div class="text-emerald-400 text-xl mb-1"><i class="fa-solid fa-calendar-days"></i></div><div id="kpi-ciclos" class="font-display text-3xl font-bold text-white">0</div><div class="text-xs text-slate-400">Ciclos documentados</div></div>
-            <div class="glass-panel p-4 rounded-2xl"><div class="text-blue-400 text-xl mb-1"><i class="fa-solid fa-user-graduate"></i></div><div id="kpi-estudiantes" class="font-display text-3xl font-bold text-white">0</div><div class="text-xs text-slate-400">Estudiantes autores</div></div>
-            <div class="glass-panel p-4 rounded-2xl"><div class="text-amber-400 text-xl mb-1"><i class="fa-solid fa-award"></i></div><div id="kpi-insignias" class="font-display text-3xl font-bold text-white">0</div><div class="text-xs text-slate-400">Insignias otorgadas</div></div>
-          </div>
-        </div>
-      </div>
-
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
-        <div class="glass-panel p-4 sm:p-5 rounded-2xl shadow-xl space-y-4">
-          <div class="flex flex-col sm:flex-row gap-3">
-            <div class="relative flex-grow">
-              <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
-              <input id="f-buscar" type="text" placeholder="Buscar proyecto, integrante, cliente o problema…" class="w-full bg-slate-900/90 border border-slate-700 rounded-xl pl-10 pr-4 py-2.5 text-sm text-white placeholder-slate-400 focus:outline-none focus:border-cyan-500" />
-            </div>
-            <button data-accion="limpiar" class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium"><i class="fa-solid fa-rotate-left mr-1"></i>Limpiar filtros</button>
-          </div>
-          <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2.5">
-            <div><label class="lbl">Semestre</label><select id="f-semestre" class="sel filtro"></select></div>
-            <div><label class="lbl">Contexto</label><select id="f-contexto" class="sel filtro">
-              <option value="">Todos</option><option>Institucional</option><option>Social</option><option>Comercial</option></select></div>
-            <div><label class="lbl">Entorno</label><select id="f-entorno" class="sel filtro">
-              <option value="">Todos</option><option>Digital</option><option>Híbrido</option><option>Análogo</option></select></div>
-            <div><label class="lbl">Enfoque</label><select id="f-enfoque" class="sel filtro">
-              <option value="">Todos</option><option>Desarrollo Sostenible</option><option>Internacionalización</option><option>Ética y Bienestar</option></select></div>
-            <div><label class="lbl">Tipo de jugador</label><select id="f-jugador" class="sel filtro"></select></div>
-            <div><label class="lbl">Herramienta</label><select id="f-herramienta" class="sel filtro"></select></div>
-            <div><label class="lbl">Implementación</label><select id="f-implementacion" class="sel filtro"></select></div>
-          </div>
-        </div>
-      </div>
-
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <h3 class="font-display text-lg font-bold text-white mb-6">Proyectos <span id="conteo" class="text-sm font-normal text-slate-400 ml-1"></span></h3>
-        <div id="grilla" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
-        <div id="vacio" class="hidden text-center py-16 glass-panel rounded-2xl">
-          <div class="w-16 h-16 rounded-2xl bg-slate-800/80 text-slate-400 flex items-center justify-center mx-auto mb-4 text-2xl"><i class="fa-solid fa-filter-circle-xmark"></i></div>
-          <h4 class="font-display text-lg font-bold text-white mb-1">No hay proyectos con esos filtros</h4>
-          <p class="text-sm text-slate-400 mb-4">Prueba otra combinación o limpia los filtros.</p>
-          <button data-accion="limpiar" class="px-4 py-2 rounded-xl bg-cyan-500 text-slate-950 font-semibold text-sm">Mostrar todos</button>
-        </div>
-      </div>
-    </section>
-
-    <!-- VISTA: SALÓN DE LA FAMA -->
-    <section id="vista-salon" class="vista hidden max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-      <div class="text-center max-w-2xl mx-auto mb-10">
-        <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-semibold mb-3"><i class="fa-solid fa-crown"></i> Reconocimiento docente y comunitario</span>
-        <h2 class="font-display text-3xl sm:text-4xl font-bold text-white mb-3">Salón de la Fama GameLab</h2>
-        <p class="text-slate-400 text-sm sm:text-base">Las distinciones docentes son el reconocimiento oficial. El voto popular viene de quienes exploraron los prototipos.</p>
-      </div>
-
-      <div id="bloque-distinciones" class="mb-10 hidden">
-        <h3 class="font-display font-bold text-white text-lg mb-4"><i class="fa-solid fa-star text-amber-400 mr-2"></i>Distinciones docentes</h3>
-        <div id="distinciones" class="grid grid-cols-1 md:grid-cols-3 gap-4"></div>
-      </div>
-
-      <div class="flex flex-wrap items-end justify-between gap-3 mb-4">
-        <h3 class="font-display font-bold text-white text-lg"><i class="fa-solid fa-users text-cyan-400 mr-2"></i>Ranking</h3>
-        <div class="w-56"><label class="lbl">Ordenar por</label>
-          <select id="orden-salon" class="sel"><option value="votos">Voto popular</option><option value="validacion">Resultado de validación</option></select></div>
-      </div>
-      <div id="podio" class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8"></div>
-
-      <div class="glass-panel rounded-2xl overflow-hidden">
-        <div class="overflow-x-auto">
-          <table class="w-full text-left border-collapse">
-            <thead><tr class="border-b border-slate-800 text-[11px] uppercase tracking-wider text-slate-400 bg-slate-900/50">
-              <th class="py-3.5 px-4">Proyecto</th><th class="py-3.5 px-4">Ciclo</th>
-              <th class="py-3.5 px-4 text-center"><i class="fa-solid fa-book-open text-purple-400"></i></th>
-              <th class="py-3.5 px-4 text-center"><i class="fa-solid fa-gears text-cyan-400"></i></th>
-              <th class="py-3.5 px-4 text-center"><i class="fa-solid fa-earth-americas text-emerald-400"></i></th>
-              <th class="py-3.5 px-4 text-center"><i class="fa-solid fa-face-laugh-beam text-amber-400"></i></th>
-              <th class="py-3.5 px-4 text-center">Validación</th><th class="py-3.5 px-4 text-right">Votos</th>
-            </tr></thead>
-            <tbody id="tabla-salon" class="divide-y divide-slate-800/70 text-sm"></tbody>
-          </table>
-        </div>
-      </div>
-    </section>
-
-    <!-- VISTA: PORTAFOLIOS -->
-    <section id="vista-portafolio" class="vista hidden max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-      <div class="text-center max-w-2xl mx-auto mb-8">
-        <h2 class="font-display text-3xl sm:text-4xl font-bold text-white mb-3">Portafolios estudiantiles</h2>
-        <p class="text-slate-400 text-sm sm:text-base">Cada autor tiene una página con sus proyectos, su rol y sus insignias. Compártela en tu CV o LinkedIn.</p>
-      </div>
-      <div class="grid lg:grid-cols-12 gap-6">
-        <div class="lg:col-span-4 glass-panel rounded-2xl p-4">
-          <input id="buscar-estudiante" type="text" placeholder="Buscar estudiante…" class="w-full bg-slate-900/90 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-400 focus:outline-none focus:border-cyan-500 mb-3" />
-          <div id="lista-estudiantes" class="space-y-1 max-h-[60vh] overflow-y-auto"></div>
-        </div>
-        <div id="detalle-estudiante" class="lg:col-span-8 glass-panel rounded-2xl p-6 flex items-center justify-center text-slate-400 text-sm min-h-[240px]">
-          Elige un estudiante para ver su portafolio.
-        </div>
-      </div>
-    </section>
-
-    <!-- VISTA: PUBLICAR -->
-    <section id="vista-publicar" class="vista hidden max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-      <div class="glass-panel rounded-3xl p-6 sm:p-10">
-        <div class="border-b border-slate-800 pb-6 mb-8">
-          <span class="text-xs font-semibold uppercase tracking-wider text-emerald-400">Protocolo de entrega final · Semana 15</span>
-          <h2 class="font-display text-2xl sm:text-3xl font-bold text-white mt-1">Postula tu proyecto al repositorio</h2>
-          <p class="text-sm text-slate-400 mt-1">Tu proyecto será visible cuando el docente lo apruebe.</p>
-        </div>
-        <div class="grid md:grid-cols-3 gap-6 mb-8">
-          <div class="bg-slate-900/70 border border-slate-800 p-5 rounded-2xl">
-            <div class="w-9 h-9 rounded-xl bg-blue-500/20 text-blue-400 font-display font-bold flex items-center justify-center mb-3">1</div>
-            <h3 class="font-bold text-white mb-2">Carpeta pública en Drive</h3>
-            <p class="text-xs text-slate-400 leading-relaxed">Nómbrala <code class="text-cyan-300 bg-slate-950 px-1.5 py-0.5 rounded">SEMESTRE_NOMBREPROYECTO</code> y comparte como <strong>"Cualquier persona con el enlace: Lector"</strong>. No uses enlaces de Canvas.</p>
-          </div>
-          <div class="bg-slate-900/70 border border-slate-800 p-5 rounded-2xl">
-            <div class="w-9 h-9 rounded-xl bg-cyan-500/20 text-cyan-400 font-display font-bold flex items-center justify-center mb-3">2</div>
-            <h3 class="font-bold text-white mb-2">Ten listo</h3>
-            <ul class="text-xs text-slate-400 space-y-1.5">
-              <li><i class="fa-solid fa-check text-emerald-400 mr-1.5"></i>4 entregables metodológicos (PDF)</li>
-              <li><i class="fa-solid fa-check text-emerald-400 mr-1.5"></i>Prototipo publicado y video pitch</li>
-              <li><i class="fa-solid fa-check text-emerald-400 mr-1.5"></i>Imagen de portada 16:9</li>
-              <li><i class="fa-solid fa-check text-emerald-400 mr-1.5"></i>Puntaje GAMEFULQUEST/GAMEX</li>
-              <li><i class="fa-solid fa-check text-emerald-400 mr-1.5"></i>Autorización de todo el equipo</li>
-            </ul>
-          </div>
-          <div class="bg-slate-900/70 border border-slate-800 p-5 rounded-2xl">
-            <div class="w-9 h-9 rounded-xl bg-amber-500/20 text-amber-400 font-display font-bold flex items-center justify-center mb-3">3</div>
-            <h3 class="font-bold text-white mb-2">¿Retomas un proyecto?</h3>
-            <p class="text-xs text-slate-400 leading-relaxed">Si tu equipo mejoró un proyecto de otro ciclo, escribe su ID en el formulario. Ambos quedarán enlazados como versiones.</p>
-          </div>
-        </div>
-        <div class="bg-slate-950/60 border border-slate-800 rounded-2xl p-6 text-center">
-          <a id="btn-formulario" href="#" target="_blank" rel="noopener" class="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-semibold text-sm shadow-lg shadow-cyan-500/20">
-            <i class="fa-solid fa-file-signature"></i> Abrir formulario de registro
-          </a>
-          <p id="nota-formulario" class="text-xs text-slate-400 mt-3">Inicia sesión con tu correo institucional.</p>
-        </div>
-      </div>
-    </section>
-
-    <div id="error" class="hidden max-w-xl mx-auto px-4 py-24 text-center">
-      <i class="fa-solid fa-triangle-exclamation text-3xl text-rose-400 mb-3"></i>
-      <p class="text-white font-semibold">No se pudo cargar el repositorio.</p>
-      <p id="error-detalle" class="text-xs text-slate-400 mt-2"></p>
-    </div>
-  </main>
-
-  <!-- MODAL PROYECTO -->
-  <div id="modal-proyecto" class="fixed inset-0 z-50 hidden overflow-y-auto bg-slate-950/85 backdrop-blur-md p-3 sm:p-6">
-    <div class="max-w-5xl mx-auto bg-slate-900 border border-slate-700/80 rounded-3xl shadow-2xl overflow-hidden my-4">
-      <div class="flex items-center justify-between px-6 py-4 bg-slate-950 border-b border-slate-800">
-        <div id="modal-etiquetas" class="flex flex-wrap items-center gap-2"></div>
-        <button data-accion="cerrar-proyecto" class="w-9 h-9 rounded-xl bg-slate-800 hover:bg-rose-500/20 hover:text-rose-400 text-slate-400 flex items-center justify-center"><i class="fa-solid fa-xmark text-lg"></i></button>
-      </div>
-      <div id="modal-cuerpo" class="p-6 sm:p-8 space-y-8"></div>
-    </div>
-  </div>
-
-  <!-- MODAL INSIGNIA -->
-  <div id="modal-insignia" class="fixed inset-0 z-50 hidden overflow-y-auto bg-slate-950/90 backdrop-blur-md p-3 sm:p-6">
-    <div class="max-w-xl mx-auto bg-slate-900 border border-slate-700 rounded-3xl p-5 sm:p-6 shadow-2xl my-4">
-      <div class="flex items-center justify-between mb-4">
-        <span class="text-xs font-semibold uppercase tracking-wider text-amber-400"><i class="fa-solid fa-medal mr-1.5"></i>Insignia digital · Sello de portafolio</span>
-        <button data-accion="cerrar-insignia" class="w-8 h-8 rounded-lg bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
-      </div>
-      <div id="insignia-contenido"></div>
-    </div>
-  </div>
-
-  <footer class="border-t border-slate-800/80 bg-slate-950/60 py-6 mt-12">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-400">
-      <span><strong class="font-display text-white">UPAO GameLab</strong> · Escuela de Ciencias de la Comunicación · Trujillo, Perú</span>
-      <span>Contenidos bajo licencia CC BY-NC 4.0 de sus autores</span>
-    </div>
-  </footer>
-
-<script>
-const API_URL = 'https://script.google.com/macros/s/AKfycbxAAidvGzVQYI7lSwyoiIiKYJOadaeKIwRjtgCg_UMXtPTqWQIOqV76df1_dTUPU8uJ/exec';
-
-const ES_GAS = typeof google !== 'undefined' && google.script && google.script.run;
-const ES_API = !ES_GAS && /^https:\/\/script\.google\.com\//.test(API_URL);
-const META = 3;
-const CATEGORIAS = [
-  { k: 'narrativa', label: 'Mejor Narrativa', icon: 'fa-book-open', color: 'text-purple-400' },
-  { k: 'mecanicas', label: 'Mejor Mecánica', icon: 'fa-gears', color: 'text-cyan-400' },
-  { k: 'impacto', label: 'Mayor Impacto', icon: 'fa-earth-americas', color: 'text-emerald-400' },
-  { k: 'diversion', label: 'Más Divertido', icon: 'fa-face-laugh-beam', color: 'text-amber-400' }
-];
-const MARCZEWSKI = ['Triunfador', 'Socializador', 'Espíritu libre', 'Filántropo', 'Jugador', 'Disruptor'];
-const IMPLEMENTACION = ['Prototipo de aula', 'Piloto con usuarios reales', 'Implementado por el cliente'];
-
-let DATA = { proyectos: [], formUrl: '', appUrl: '', docentes: '' };
-let PARAMS = {};
-
-const almacen = {
-  leer(k, def) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : def; } catch (e) { return def; } },
-  escribir(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
-};
-function nuevoId() {
-  try { if (crypto.randomUUID) return crypto.randomUUID(); } catch (e) {}
-  return 'v-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 12);
-}
-let estado = almacen.leer('upao_gamelab_v2', null) || { visitante: nuevoId(), explorados: [], votos: {} };
-function guardar() { almacen.escribir('upao_gamelab_v2', estado); actualizarHUD(); }
-
-/* ============================================================
-   DATOS DE DEMOSTRACIÓN (solo si se abre fuera de Apps Script)
-   ============================================================ */
-const DEMO = [
-  {
-    id: 'GL-2026-10-001', semestre: '2026-10', titulo: 'Eco-Héroes: Guardianes del Bosque', distincion: 'Mayor impacto social 2026-10',
-    integrantes: [{ nombre: 'Valeria Mendoza', rol: 'Dirección y narrativa' }, { nombre: 'Carlos Paredes', rol: 'Mecánicas' }, { nombre: 'Diego Alarcón', rol: 'Prototipo web' }, { nombre: 'Camila Ríos', rol: 'Validación' }],
-    contexto: 'Social', entorno: 'Híbrido', enfoque: 'Desarrollo Sostenible', cliente: 'Gerencia ambiental municipal', implementacion: 'Piloto con usuarios reales', base: '',
-    problema: 'Según entrevistas con la gerencia ambiental local, el 68% de jóvenes de 18 a 24 años desconoce los puntos de acopio diferenciados.',
-    objetivo: 'Incrementar en 40% la entrega semanal de residuos reciclables clasificados durante 30 días de piloto.',
-    publico: 'Jóvenes universitarios de 18 a 24 años.', jugadores: ['Filántropo', 'Socializador', 'Triunfador'],
-    octalysis: ['Significado épico', 'Desarrollo y logro', 'Influencia social'], herramientas: ['Web (HTML/JS)', 'Material físico'],
-    imagen: '', prototipo: 'https://example.com', video: 'https://example.com', carpeta: 'https://example.com',
-    entregables: { mda: 'https://example.com', fases6d: 'https://example.com', canvas: 'https://example.com', informe: 'https://example.com' },
-    validacion: { instrumento: 'GAMEFULQUEST', escalaMax: 7, puntaje: 5.8, muestra: 42 },
-    lecciones: 'El escaneo QR funcionó muy bien, pero el ranking por facultad desmotivó a los últimos lugares.\nUn próximo equipo debería probar metas colectivas en vez de competencia.',
-    retomable: true, votos: { narrativa: 18, mecanicas: 22, impacto: 31, diversion: 19 }
-  },
-  {
-    id: 'GL-2026-20-005', semestre: '2026-20', titulo: 'Eco-Héroes 2.0: Liga Verde', distincion: '',
-    integrantes: [{ nombre: 'Fernanda Quispe', rol: 'Narrativa' }, { nombre: 'Renzo Díaz', rol: 'Mecánicas cooperativas' }, { nombre: 'Lucía Chávez', rol: 'Validación' }],
-    contexto: 'Social', entorno: 'Híbrido', enfoque: 'Desarrollo Sostenible', cliente: 'Gerencia ambiental municipal', implementacion: 'Prototipo de aula', base: 'GL-2026-10-001',
-    problema: 'El piloto anterior mostró abandono del 45% en la tercera semana entre los equipos con menor puntaje.',
-    objetivo: 'Reducir el abandono a menos de 20% con metas colectivas en 4 semanas.',
-    publico: 'Jóvenes universitarios de 18 a 24 años.', jugadores: ['Socializador', 'Filántropo'],
-    octalysis: ['Influencia social', 'Significado épico'], herramientas: ['Figma', 'Material físico'],
-    imagen: '', prototipo: 'https://example.com', video: 'https://example.com', carpeta: 'https://example.com',
-    entregables: { mda: 'https://example.com', fases6d: 'https://example.com', canvas: 'https://example.com', informe: 'https://example.com' },
-    validacion: { instrumento: 'GAMEFULQUEST', escalaMax: 7, puntaje: 6.1, muestra: 30 },
-    lecciones: 'Las metas colectivas redujeron el abandono. Falta probarlo fuera del campus.',
-    retomable: true, votos: { narrativa: 12, mecanicas: 20, impacto: 17, diversion: 14 }
-  },
-  {
-    id: 'GL-2026-20-002', semestre: '2026-20', titulo: 'BiblioQuest UPAO: El Archivo Perdido', distincion: 'Mejor narrativa 2026-20',
-    integrantes: [{ nombre: 'Mateo Salazar', rol: 'Guion' }, { nombre: 'Jorge Huamán', rol: 'Prototipo Genially' }, { nombre: 'Ximena León', rol: 'Validación' }],
-    contexto: 'Institucional', entorno: 'Digital', enfoque: 'Internacionalización', cliente: 'e-Biblioteca UPAO', implementacion: 'Implementado por el cliente', base: '',
-    problema: 'El 74% de estudiantes de primeros ciclos nunca ha ingresado a las bases de datos científicas de la e-Biblioteca.',
-    objetivo: 'Lograr que 250 estudiantes de 1.º a 3.º ciclo completen 3 búsquedas indexadas en 4 semanas.',
-    publico: 'Estudiantes ingresantes de 17 a 20 años.', jugadores: ['Espíritu libre', 'Triunfador'],
-    octalysis: ['Imprevisibilidad y curiosidad', 'Desarrollo y logro'], herramientas: ['Genially'],
-    imagen: '', prototipo: 'https://example.com', video: 'https://example.com', carpeta: 'https://example.com',
-    entregables: { mda: 'https://example.com', fases6d: 'https://example.com', canvas: 'https://example.com', informe: 'https://example.com' },
-    validacion: { instrumento: 'GAMEX', escalaMax: 5, puntaje: 4.4, muestra: 58 },
-    lecciones: 'Las pistas encadenadas mantuvieron el interés. Las bases de datos con login institucional cortaban el flujo.',
-    retomable: false, votos: { narrativa: 29, mecanicas: 25, impacto: 21, diversion: 27 }
-  },
-  {
-    id: 'GL-2025-20-004', semestre: '2025-20', titulo: 'VeriCheck: Cazadores de Bulos', distincion: '',
-    integrantes: [{ nombre: 'Alejandra Soto', rol: 'Investigación' }, { nombre: 'Bruno Morales', rol: 'Mecánicas' }, { nombre: 'Kiara Peña', rol: 'Diseño visual' }],
-    contexto: 'Social', entorno: 'Digital', enfoque: 'Ética y Bienestar', cliente: '', implementacion: 'Prototipo de aula', base: '',
-    problema: 'El 71% de estudiantes encuestados compartió al menos una noticia no verificada en el último trimestre.',
-    objetivo: 'Entrenar a 300 estudiantes en 4 técnicas de verificación con 85% de precisión tras 15 minutos de juego.',
-    publico: 'Estudiantes de comunicación y público general.', jugadores: ['Disruptor', 'Triunfador'],
-    octalysis: ['Desarrollo y logro', 'Pérdida y evitación'], herramientas: ['Web (HTML/JS)'],
-    imagen: '', prototipo: 'https://example.com', video: 'https://example.com', carpeta: 'https://example.com',
-    entregables: { mda: 'https://example.com', fases6d: 'https://example.com', canvas: 'https://example.com', informe: 'https://example.com' },
-    validacion: { instrumento: 'GAMEX', escalaMax: 5, puntaje: 4.1, muestra: 35 },
-    lecciones: 'El temporizador generó presión útil, pero penalizar errores frustró a los nuevos jugadores.',
-    retomable: true, votos: { narrativa: 27, mecanicas: 31, impacto: 29, diversion: 28 }
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="color-scheme" content="light" />
+<title>UPAO GameLab | Repositorio de Gamificación</title>
+<meta name="description" content="Repositorio histórico de proyectos del Taller de Gamificación (COMD-102), Ciencias de la Comunicación, UPAO." />
+<style>
+  :root {
+    color-scheme: light;
+    --bg: #f3f6fb; --card: #ffffff; --soft: #f8fafc; --line: #e2e8f0; --line2: #cbd5e1;
+    --txt: #0f172a; --mut: #475569; --mut2: #334155;
+    --cyan: #0891b2; --cyan2: #0e7490; --amber: #b45309; --rose: #be123c; --emerald: #047857; --blue: #004a99; --purple: #6d28d9;
   }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0; background: var(--bg); color: var(--txt);
+    font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background-image: radial-gradient(at 0% 0%, rgba(0,114,206,.10) 0, transparent 45%), radial-gradient(at 100% 0%, rgba(6,182,212,.09) 0, transparent 45%);
+    background-attachment: fixed;
+  }
+  button { font: inherit; color: inherit; cursor: pointer; }
+  a { color: var(--cyan2); }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 0 16px; }
+  .hidden { display: none !important; }
+
+  .demo-note { background: #fef3c7; border-bottom: 1px solid #fcd34d; color: #78350f; font-size: 14px; text-align: center; padding: 8px 12px; }
+
+  /* ENCABEZADO */
+  header { position: sticky; top: 0; z-index: 30; background: rgba(255,255,255,.94); backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); }
+  .top { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 0 4px; }
+  .brand { display: flex; align-items: center; gap: 10px; cursor: pointer; background: none; border: 0; padding: 0; }
+  .brand .u { background: var(--blue); color: #fff; border-radius: 10px; padding: 4px 10px; font-weight: 700; letter-spacing: .05em; }
+  .brand h1 { margin: 0; font-size: 20px; }
+  .brand h1 span { color: var(--cyan); }
+  .brand .tag { font-size: 12.5px; font-weight: 700; color: var(--cyan2); background: #ecfeff; border: 1px solid #67e8f9; border-radius: 999px; padding: 1px 8px; }
+  .hud { display: flex; align-items: center; gap: 10px; background: #fff; border: 1px solid var(--line2); border-radius: 14px; padding: 5px 10px; }
+  .hud .ico { width: 30px; height: 30px; border-radius: 9px; background: #fef3c7; display: flex; align-items: center; justify-content: center; font-size: 16px; }
+  .hud b { font-size: 14px; display: block; line-height: 1.2; }
+  .hud .bar2 { width: 84px; height: 6px; background: #e2e8f0; border-radius: 999px; overflow: hidden; margin-top: 3px; }
+  .hud .bar2 i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, #06b6d4, #f59e0b); transition: width .5s; }
+  .hud .help { background: none; border: 0; width: 32px; height: 32px; border-radius: 50%; color: var(--mut); font-size: 16px; }
+  .tabs { display: flex; gap: 6px; padding: 4px 0 8px; overflow-x: auto; scrollbar-width: none; }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tab { flex: 1 0 auto; white-space: nowrap; background: transparent; border: 1px solid transparent; border-radius: 12px; padding: 8px 14px; font-size: 15px; font-weight: 600; color: var(--mut2); min-height: 42px; }
+  .tab[aria-current="page"] { background: #ecfeff; border-color: #67e8f9; color: var(--cyan2); }
+
+  /* CATÁLOGO */
+  .intro { padding: 22px 0 6px; }
+  .intro h2 { margin: 0 0 6px; font-size: 26px; line-height: 1.2; }
+  .intro p { margin: 0; color: var(--mut2); max-width: 70ch; }
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 16px 0 4px; }
+  .stat { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 10px 14px; }
+  .stat b { display: block; font-size: 26px; line-height: 1.1; }
+  .stat span { color: var(--mut); font-size: 14px; }
+  .search input { width: 100%; background: #fff; border: 1px solid var(--line2); border-radius: 12px; padding: 11px 12px; color: var(--txt); font-size: 16px; }
+  input::placeholder, textarea::placeholder { color: #64748b; }
+  input:focus, select:focus, textarea:focus, button:focus-visible, a:focus-visible { outline: 2px solid var(--cyan); outline-offset: 1px; }
+  .filters { display: flex; gap: 8px; padding: 10px 0 4px; overflow-x: auto; scrollbar-width: none; }
+  .filters::-webkit-scrollbar { display: none; }
+  select { background: #fff; color: var(--mut2); border: 1px solid var(--line2); border-radius: 12px; padding: 9px 10px; font-size: 16px; min-height: 44px; max-width: 220px; }
+  .pill { white-space: nowrap; background: #fff; border: 1px solid var(--line2); border-radius: 12px; padding: 9px 14px; font-size: 15px; min-height: 44px; color: var(--mut2); }
+  .pill[aria-pressed="true"] { background: #ffe4e6; border-color: #fb7185; color: #9f1239; }
+  .legend { color: var(--mut); font-size: 14px; padding: 6px 0 0; }
+  .legend b { color: var(--mut2); }
+  .bar { display: flex; justify-content: space-between; align-items: baseline; padding: 16px 0 12px; gap: 12px; flex-wrap: wrap; }
+  .bar h3 { margin: 0; font-size: 20px; }
+  .count { color: var(--mut); font-size: 14.5px; }
+
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
+  .card { scroll-margin-top: 110px; background: var(--card); border: 1px solid var(--line); border-radius: 18px; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 1px 2px rgba(15,23,42,.05), 0 8px 24px -12px rgba(15,23,42,.18); animation: in .35s ease both; }
+  @keyframes in { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+  .cover { position: relative; height: 280px; display: flex; align-items: center; justify-content: center; font-size: 72px; overflow: hidden; }
+  .cover img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .cover::after { content: ""; position: absolute; inset: 0; background: linear-gradient(to top, rgba(15,23,42,.16), rgba(15,23,42,0) 50%); pointer-events: none; }
+  .badges { position: absolute; top: 12px; left: 12px; display: flex; gap: 6px; flex-wrap: wrap; z-index: 2; max-width: calc(100% - 70px); }
+  .badge { background: rgba(255,255,255,.95); border: 1px solid var(--line2); border-radius: 9px; padding: 3px 9px; font-size: 13.5px; font-weight: 600; color: var(--txt); }
+  .badge.c { color: var(--cyan2); border-color: #67e8f9; }
+  .badge.v2 { color: var(--emerald); border-color: #6ee7b7; }
+  .badge.star { color: #92400e; border-color: #fcd34d; background: #fffbeb; }
+  .seen { position: absolute; right: 12px; top: 12px; z-index: 2; width: 26px; height: 26px; border-radius: 50%; background: #d1fae5; border: 1px solid #34d399; color: var(--emerald); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; }
+
+  /* PANEL LATERAL DE ACCIONES */
+  .rail { position: absolute; right: 10px; bottom: 12px; z-index: 3; display: flex; flex-direction: column; gap: 8px; align-items: center; }
+  .act { background: none; border: 0; padding: 0; position: relative; width: 44px; height: 44px; color: var(--txt); }
+  .act .ic { width: 44px; height: 44px; border-radius: 50%; background: rgba(255,255,255,.96); border: 1px solid var(--line2); box-shadow: 0 2px 6px rgba(15,23,42,.2); display: flex; align-items: center; justify-content: center; transition: transform .15s ease, background .15s ease; }
+  .act:active .ic { transform: scale(.88); }
+  .act .ic svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .act small { position: absolute; right: -6px; bottom: -4px; min-width: 22px; padding: 1px 5px; border-radius: 999px; background: #f59e0b; color: #1c1917; font-size: 12.5px; font-weight: 700; line-height: 1.3; text-align: center; border: 2px solid #fff; }
+  .act.on .ic svg { fill: currentColor; }
+  .act.fav.on { color: #e11d48; } .act.fav.on .ic { border-color: #e11d48; background: #fff1f2; }
+  .act.like.on { color: #d97706; } .act.like.on .ic { border-color: #d97706; background: #fffbeb; }
+  .act.cmp.on { color: var(--cyan2); } .act.cmp.on .ic { border-color: var(--cyan); background: #cffafe; }
+  .act.pop .ic { animation: pop .3s ease; }
+  @keyframes pop { 50% { transform: scale(1.25); } }
+
+  .body { padding: 16px; display: flex; flex-direction: column; gap: 12px; flex: 1; }
+  .body h4 { margin: 0; font-size: 18px; line-height: 1.3; }
+  .body p { margin: 0; color: var(--mut2); font-size: 15px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip { border: 1px solid var(--line2); background: #f1f5f9; color: var(--mut2); border-radius: 999px; padding: 3px 10px; font-size: 13.5px; }
+  .chip.am { background: #fffbeb; border-color: #fcd34d; color: #78350f; }
+  .chip.bl { background: #eff6ff; border-color: #93c5fd; color: #1e3a8a; }
+  .meta { display: flex; justify-content: space-between; gap: 10px; color: var(--mut); font-size: 14px; border-top: 1px solid var(--line); padding-top: 12px; margin-top: auto; }
+  .meta b { color: var(--emerald); font-weight: 700; white-space: nowrap; }
+
+  .btn { background: #ecfeff; border: 1px solid #67e8f9; color: var(--cyan2); border-radius: 12px; padding: 11px 14px; font-weight: 600; font-size: 15px; min-height: 46px; width: 100%; }
+  .btn.sec { background: #f1f5f9; border-color: var(--line2); color: var(--txt); }
+  .btn.pri { background: linear-gradient(90deg, #0e7490, #2563eb); border: 0; color: #fff; }
+  .btn.warn { background: #fff1f2; border-color: #fda4af; color: #9f1239; }
+  .btn.gold { background: #fffbeb; border-color: #fcd34d; color: #92400e; }
+  .btn.wa { background: #0f7a40; border-color: #0f7a40; color: #fff; }
+  .btn.sm { width: auto; min-height: 40px; padding: 8px 14px; font-size: 14.5px; }
+  a.btn { display: block; text-align: center; text-decoration: none; }
+  .btn:disabled { opacity: .5; cursor: not-allowed; }
+  .linkbtn { background: none; border: 0; color: var(--cyan2); text-decoration: underline; padding: 8px; font-size: 15px; }
+  #fin, #cargando, #vacio { text-align: center; color: var(--mut); padding: 28px 0 40px; font-size: 15px; }
+  #cargando .spin, #inicio .spin { width: 28px; height: 28px; border-radius: 50%; border: 3px solid var(--line2); border-top-color: var(--cyan); margin: 0 auto 8px; animation: sp .8s linear infinite; }
+  @keyframes sp { to { transform: rotate(360deg); } }
+
+  #cmpbar { position: fixed; left: 50%; bottom: 14px; transform: translateX(-50%); z-index: 40; width: min(560px, calc(100% - 24px)); background: #fff; border: 1px solid var(--cyan); border-radius: 16px; padding: 10px 12px; display: flex; align-items: center; gap: 10px; box-shadow: 0 12px 40px rgba(15,23,42,.25); }
+  #cmpbar span { flex: 1; font-size: 15px; }
+
+  /* MODALES */
+  .ov { position: fixed; inset: 0; z-index: 60; background: rgba(15,23,42,.55); backdrop-filter: blur(4px); overflow-y: auto; padding: 14px; }
+  #ov2 { z-index: 70; }
+  .sheet { max-width: 880px; margin: 10px auto; background: #fff; border: 1px solid var(--line2); border-radius: 22px; overflow: hidden; box-shadow: 0 20px 60px rgba(15,23,42,.3); }
+  .sheet.sm { max-width: 480px; margin-top: 8vh; }
+  .sh-top { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 12px 18px; background: #f1f5f9; border-bottom: 1px solid var(--line); }
+  .sh-top .chips { flex: 1; }
+  .x { background: #e2e8f0; border: 0; width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: var(--txt); flex: none; }
+  .x svg { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 2; }
+  .sh-body { padding: 18px; display: grid; gap: 16px; }
+  .sh-body h2 { margin: 0; font-size: 26px; line-height: 1.25; }
+  .box { background: var(--soft); border: 1px solid var(--line); border-radius: 16px; padding: 14px; }
+  .box h5 { margin: 0 0 6px; font-size: 13.5px; text-transform: uppercase; letter-spacing: .06em; }
+  .box p { margin: 0; color: var(--mut2); white-space: pre-line; }
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .three { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .bigscore { font-size: 40px; font-weight: 800; line-height: 1; }
+  .track { height: 10px; background: #e2e8f0; border-radius: 999px; overflow: hidden; margin-top: 10px; }
+  .track i { display: block; height: 100%; background: linear-gradient(90deg, #10b981, #06b6d4); }
+  textarea, input.f, .sheet select { width: 100%; background: #fff; color: var(--txt); border: 1px solid var(--line2); border-radius: 12px; padding: 10px 12px; font: inherit; font-size: 16px; max-width: none; }
+  textarea { min-height: 88px; resize: vertical; }
+  .tip { border-left: 3px solid var(--cyan); background: #ecfeff; padding: 8px 12px; border-radius: 0 12px 12px 0; font-size: 15px; }
+  .tip small { display: block; color: var(--mut); font-size: 13.5px; margin-top: 2px; }
+  .tip.pend { border-color: #f59e0b; background: #fffbeb; }
+  .row { display: flex; gap: 10px; flex-wrap: wrap; }
+  .row > * { flex: 1 1 150px; }
+  .team { display: flex; flex-wrap: wrap; gap: 8px; }
+  .person { text-align: left; background: #f1f5f9; border: 1px solid var(--line2); border-radius: 12px; padding: 6px 12px; min-height: 44px; }
+  .person b { display: block; font-size: 15px; }
+  .person small { color: var(--mut); font-size: 13.5px; }
+  .lineage { background: #ecfdf5; border: 1px solid #6ee7b7; border-radius: 16px; padding: 12px 14px; font-size: 15px; display: grid; gap: 4px; color: #064e3b; }
+  .lineage .t { font-weight: 700; font-size: 13.5px; text-transform: uppercase; letter-spacing: .05em; color: var(--emerald); }
+  .ruta { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  .fase { display: block; text-decoration: none; background: #fff; border: 1px solid var(--line2); border-radius: 14px; padding: 12px; color: var(--txt); }
+  a.fase:hover { border-color: var(--cyan); }
+  .fase i { font-style: normal; font-size: 13px; font-weight: 700; color: var(--cyan2); font-family: ui-monospace, monospace; }
+  .fase b { display: block; margin-top: 4px; }
+  .fase span { font-size: 13.5px; color: var(--mut); }
+  .fase.off { background: #f8fafc; border-style: dashed; color: var(--mut); }
+  .votes { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  .vote { text-align: left; background: #fff; border: 1px solid var(--line2); border-radius: 14px; padding: 10px 12px; display: flex; justify-content: space-between; align-items: center; gap: 8px; min-height: 60px; }
+  .vote.on { background: #fffbeb; border-color: #f59e0b; }
+  .vote.lock { background: #f8fafc; color: #64748b; cursor: not-allowed; }
+  .vote b { font-size: 14.5px; display: block; }
+  .vote small { font-size: 13px; color: var(--mut); }
+  .vote .n { font-weight: 800; background: #f1f5f9; border-radius: 8px; padding: 2px 8px; }
+
+  /* TABLAS */
+  .tblw { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 14.5px; }
+  th, td { padding: 10px 8px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--line); }
+  th { color: var(--mut); font-weight: 600; }
+  .cmpt { table-layout: fixed; }
+  .cmpt td, .cmpt th { overflow-wrap: anywhere; }
+  .cmpt th { width: 25%; }
+  td.best { color: var(--emerald); font-weight: 700; }
+  .panel { background: var(--card); border: 1px solid var(--line); border-radius: 18px; box-shadow: 0 1px 2px rgba(15,23,42,.05); }
+
+  /* SALÓN */
+  .center { text-align: center; max-width: 640px; margin: 0 auto 24px; }
+  .center h2 { margin: 6px 0; font-size: 30px; }
+  .center p { margin: 0; color: var(--mut2); }
+  .kicker { display: inline-block; background: #fffbeb; border: 1px solid #fcd34d; color: #92400e; font-weight: 700; font-size: 13.5px; border-radius: 999px; padding: 3px 12px; }
+  .podio { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 20px; }
+  .pod { background: var(--card); border: 2px solid var(--line); border-radius: 18px; padding: 18px; display: grid; gap: 10px; }
+  .pod.g1 { border-color: #f59e0b; } .pod.g2 { border-color: #94a3b8; } .pod.g3 { border-color: #fb923c; }
+  .pod .rk { font-weight: 800; }
+  .dist { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 26px; }
+  .dist button { text-align: left; background: #fffbeb; border: 1px solid #fcd34d; border-radius: 16px; padding: 14px; }
+  .dist b.s { color: #92400e; font-size: 14px; display: block; }
+
+  /* PORTAFOLIOS */
+  .pf { display: grid; grid-template-columns: 320px 1fr; gap: 18px; align-items: start; }
+  .pf .lista { padding: 14px; }
+  .pf .lista .sc { max-height: 60vh; overflow-y: auto; margin-top: 10px; }
+  .est { width: 100%; text-align: left; background: none; border: 0; padding: 10px 10px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; gap: 8px; min-height: 44px; }
+  .est:hover, .est[aria-current="true"] { background: #ecfeff; }
+  .est small { color: var(--mut); }
+  .pf .det { padding: 20px; min-height: 220px; }
+  .proj { background: var(--soft); border: 1px solid var(--line); border-radius: 14px; padding: 12px; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px; margin-top: 10px; }
+
+  /* PUBLICAR */
+  .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin: 20px 0; }
+  .step { background: var(--soft); border: 1px solid var(--line); border-radius: 16px; padding: 16px; }
+  .step .n { width: 34px; height: 34px; border-radius: 10px; background: #dbeafe; color: #1e3a8a; font-weight: 800; display: flex; align-items: center; justify-content: center; margin-bottom: 8px; }
+  .step h5 { margin: 0 0 6px; font-size: 16px; }
+  .step p, .step li { color: var(--mut2); font-size: 15px; margin: 0; }
+  .step ul { margin: 0; padding-left: 18px; display: grid; gap: 4px; }
+  code { background: #eef2f7; border-radius: 6px; padding: 1px 6px; font-size: 14px; }
+
+  /* INSIGNIA */
+  .badge-card { background: linear-gradient(135deg, #ffffff, #e0f2fe); border: 2px solid var(--cyan); border-radius: 18px; padding: 22px; text-align: center; }
+  .badge-card .trophy { width: 76px; height: 76px; margin: 14px auto; border-radius: 20px; background: linear-gradient(135deg, #fbbf24, #f97316); display: flex; align-items: center; justify-content: center; font-size: 38px; transform: rotate(3deg); }
+  .verif { background: #d1fae5; border: 1px solid #34d399; color: #064e3b; border-radius: 12px; padding: 10px 14px; font-size: 15px; margin-bottom: 14px; }
+  .qr { display: inline-block; background: #fff; padding: 6px; border-radius: 10px; border: 1px solid var(--line2); }
+
+  #toast { position: fixed; z-index: 90; left: 50%; top: 110px; transform: translateX(-50%) translateY(-16px); opacity: 0; background: #0f172a; color: #e0f2fe; border-radius: 12px; padding: 10px 16px; font-size: 15px; max-width: calc(100% - 28px); text-align: center; transition: all .25s ease; pointer-events: none; box-shadow: 0 10px 30px rgba(15,23,42,.35); }
+  #toast.show { opacity: 1; transform: translateX(-50%); }
+  footer { border-top: 1px solid var(--line); background: rgba(255,255,255,.7); margin-top: 36px; padding: 18px 0 90px; color: var(--mut); font-size: 14px; }
+  footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; }
+
+  @media (max-width: 860px) {
+    .pf { grid-template-columns: 1fr; }
+    .ruta, .votes { grid-template-columns: 1fr 1fr; }
+    .podio, .dist, .steps, .three { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 560px) {
+    .brand h1 { font-size: 18px; } .brand .u { padding: 3px 8px; } .brand .tag { display: none; }
+    .hud { gap: 6px; padding: 4px 6px; } .hud .txt b { display: none; } .hud .bar2 { width: 44px; margin-top: 0; } .hud .help { width: 28px; } .brand { gap: 6px; min-width: 0; }
+    .stats { grid-template-columns: 1fr 1fr; }
+    .grid { grid-template-columns: 1fr; gap: 18px; }
+    .cover { height: 290px; }
+    .two, .ruta, .votes { grid-template-columns: 1fr; }
+    .sh-body { padding: 14px; }
+    .intro h2 { font-size: 23px; }
+    .cmpt { font-size: 13.5px; } .cmpt th, .cmpt td { padding: 8px 5px; }
+  }
+  @media print {
+    body * { visibility: hidden; }
+    #insignia-imprimible, #insignia-imprimible * { visibility: visible; }
+    #insignia-imprimible { position: fixed; left: 0; top: 0; width: 100%; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  }
+  @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+</style>
+</head>
+<body>
+
+<div id="banner-demo" class="demo-note hidden">Modo demostración con <b>datos ficticios</b>. Falta conectar el servidor: crea config.js con el enlace /exec de Apps Script.</div>
+
+<header>
+  <div class="wrap">
+    <div class="top">
+      <button class="brand" data-vista="catalogo" aria-label="Ir al inicio"><span class="u">UPAO</span><h1>Game<span>Lab</span></h1><span class="tag">COMD-102</span></button>
+      <div class="hud" title="Explora 3 expedientes para poder otorgar insignias populares">
+        <span class="ico" id="hud-ico" aria-hidden="true">🧭</span>
+        <div class="txt"><b id="hud-rango">Explorador Novato</b><div class="bar2"><i id="hud-barra"></i></div></div>
+        <span id="hud-cuenta" style="font-weight:700;font-size:14px">0/3</span>
+        <button class="help" data-accion="mision" aria-label="¿Cómo funciona?">?</button>
+      </div>
+    </div>
+    <nav class="tabs" aria-label="Secciones">
+      <button class="tab" data-vista="catalogo">🗂 Proyectos</button>
+      <button class="tab" data-vista="salon">🏆 Salón de la Fama</button>
+      <button class="tab" data-vista="portafolio">🪪 Portafolios</button>
+      <button class="tab" data-vista="publicar">☁️ Publicar</button>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <div id="inicio" style="text-align:center;padding:90px 0;color:var(--mut)"><div class="spin"></div>Cargando el repositorio…</div>
+  <div id="error" class="hidden" style="text-align:center;padding:70px 0">
+    <div style="font-size:36px">⚠️</div><b>No se pudo cargar el repositorio.</b>
+    <p id="error-detalle" style="color:var(--mut);font-size:14.5px"></p>
+    <button class="btn sec sm" onclick="location.reload()">Reintentar</button>
+  </div>
+
+  <!-- CATÁLOGO -->
+  <section id="vista-catalogo" class="vista hidden">
+    <div class="intro">
+      <h2>Diseño de experiencias lúdicas que transforman la comunicación</h2>
+      <p>Explora los proyectos integradores de ciclos anteriores: prototipo jugable, ruta metodológica completa y lo que cada equipo aprendió.</p>
+    </div>
+    <div class="stats">
+      <div class="stat"><b id="kpi-proyectos">0</b><span>Proyectos</span></div>
+      <div class="stat"><b id="kpi-ciclos">0</b><span>Ciclos</span></div>
+      <div class="stat"><b id="kpi-estudiantes">0</b><span>Estudiantes autores</span></div>
+      <div class="stat"><b id="kpi-insignias">0</b><span>Insignias otorgadas</span></div>
+    </div>
+    <div class="search" style="margin-top:14px"><input id="q" type="search" placeholder="Buscar proyecto, integrante, cliente o problema…" aria-label="Buscar" /></div>
+    <div class="filters" role="group" aria-label="Filtros">
+      <select id="fSem" aria-label="Ciclo"></select>
+      <select id="fCtx" aria-label="Contexto"><option value="">Contexto</option><option>Institucional</option><option>Social</option><option>Comercial</option></select>
+      <select id="fEnt" aria-label="Entorno"><option value="">Entorno</option><option>Digital</option><option>Híbrido</option><option>Análogo</option></select>
+      <select id="fEnf" aria-label="Enfoque"><option value="">Enfoque</option><option>Desarrollo Sostenible</option><option>Internacionalización</option><option>Ética y Bienestar</option></select>
+      <select id="fJug" aria-label="Tipo de jugador"></select>
+      <select id="fHer" aria-label="Herramienta"></select>
+      <select id="fImp" aria-label="Implementación"></select>
+      <button id="fFav" class="pill" aria-pressed="false">♥ Mi colección <span id="favN">(0)</span></button>
+      <button id="fClear" class="pill">Limpiar</button>
+    </div>
+    <div class="legend">En cada tarjeta: <b>♥</b> guardar · <b>★</b> puntuar · <b>💬</b> consejos · <b>↗</b> compartir · <b>⇄</b> comparar</div>
+    <div class="bar"><h3>Proyectos</h3><div class="count" id="count" aria-live="polite"></div></div>
+    <div class="grid" id="grid"></div>
+    <div id="cargando" class="hidden"><div class="spin"></div>Cargando más proyectos…</div>
+    <div id="sentinel" style="height:1px"></div>
+    <div id="fin" class="hidden"></div>
+    <div id="vacio" class="hidden">No hay proyectos con esos filtros.<br /><button class="linkbtn" id="vacioClear">Limpiar filtros</button></div>
+    <div style="text-align:center"><button class="linkbtn hidden" id="more">¿No carga solo? Cargar más</button></div>
+  </section>
+
+  <!-- SALÓN -->
+  <section id="vista-salon" class="vista hidden" style="padding-top:26px">
+    <div class="center"><span class="kicker">👑 Reconocimiento docente y comunitario</span><h2>Salón de la Fama GameLab</h2>
+      <p>Las distinciones docentes son el reconocimiento oficial. Las insignias populares vienen de quienes exploraron los prototipos.</p></div>
+    <div id="bloque-dist" class="hidden"><h3>⭐ Distinciones docentes</h3><div class="dist" id="dist"></div></div>
+    <div class="bar" style="padding-top:0"><h3>Ranking</h3>
+      <label style="font-size:14px;color:var(--mut)">Ordenar por <select id="orden" style="margin-left:6px"><option value="votos">Insignias populares</option><option value="validacion">Resultado de validación</option></select></label></div>
+    <div class="podio" id="podio"></div>
+    <div class="panel tblw"><table>
+      <thead><tr><th>Proyecto</th><th>Ciclo</th><th title="Mejor Narrativa">📖</th><th title="Mejor Mecánica">⚙️</th><th title="Mayor Impacto">🌎</th><th title="Más Divertido">😄</th><th title="Puntuaciones">★</th><th>Validación</th><th>Total</th></tr></thead>
+      <tbody id="tabla"></tbody></table></div>
+  </section>
+
+  <!-- PORTAFOLIOS -->
+  <section id="vista-portafolio" class="vista hidden" style="padding-top:26px">
+    <div class="center"><h2>Portafolios estudiantiles</h2><p>Cada autor tiene una página con sus proyectos, su rol y sus distinciones. Compártela en tu CV o LinkedIn.</p></div>
+    <div class="pf">
+      <div class="panel lista"><input id="buscar-est" class="f" type="search" placeholder="Buscar estudiante…" aria-label="Buscar estudiante" /><div class="sc" id="lista-est"></div></div>
+      <div class="panel det" id="det-est" style="color:var(--mut)">Elige un estudiante para ver su portafolio.</div>
+    </div>
+  </section>
+
+  <!-- PUBLICAR -->
+  <section id="vista-publicar" class="vista hidden" style="padding-top:26px">
+    <div class="panel" style="padding:24px">
+      <span class="kicker" style="background:#ecfdf5;border-color:#6ee7b7;color:var(--emerald)">Protocolo de entrega final · Semana 15</span>
+      <h2 style="margin:10px 0 4px">Postula tu proyecto al repositorio</h2>
+      <p style="margin:0;color:var(--mut2)">Tu proyecto será visible cuando el docente lo apruebe.</p>
+      <div class="steps">
+        <div class="step"><div class="n">1</div><h5>Carpeta pública en Drive</h5><p>Nómbrala <code>SEMESTRE_NOMBREPROYECTO</code> y compártela como <b>“Cualquier persona con el enlace: Lector”</b>. No uses enlaces de Canvas.</p></div>
+        <div class="step"><div class="n">2</div><h5>Ten listo</h5><ul><li>4 entregables metodológicos (PDF)</li><li>Prototipo publicado y video pitch</li><li>Imagen de portada 16:9</li><li>Puntaje GAMEFULQUEST / GAMEX</li><li>Autorización de todo el equipo</li></ul></div>
+        <div class="step"><div class="n">3</div><h5>¿Retomas un proyecto?</h5><p>Si tu equipo mejora el trabajo de otro ciclo, escribe su ID en el formulario. Ambos quedarán enlazados como versiones.</p></div>
+      </div>
+      <div style="text-align:center;background:var(--soft);border:1px solid var(--line);border-radius:16px;padding:22px">
+        <a id="btn-form" class="btn pri" style="display:inline-block;width:auto;padding:12px 26px" href="#" target="_blank" rel="noopener noreferrer">📝 Abrir formulario de registro</a>
+        <p id="nota-form" style="color:var(--mut);font-size:14.5px;margin:10px 0 0">Inicia sesión con tu cuenta de Google.</p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer><div class="wrap"><span><b>UPAO GameLab</b> · Escuela de Ciencias de la Comunicación · Trujillo, Perú</span><span>Contenidos bajo licencia CC BY-NC 4.0 de sus autores</span></div></footer>
+
+<div id="cmpbar" class="hidden"><span id="cmpTxt"></span><button class="btn sec sm" id="cmpClear">Quitar</button><button class="btn pri sm" id="cmpGo">Comparar</button></div>
+<div id="toast" role="status"></div>
+<div id="ov" class="ov hidden" role="dialog" aria-modal="true"></div>
+<div id="ov2" class="ov hidden" role="dialog" aria-modal="true"></div>
+
+<script src="config.js" onerror="void 0"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+/* ============================================================
+   CONFIGURACIÓN (viene de config.js; si falta, modo demostración)
+   ============================================================ */
+const CFG = window.GAMELAB_CONFIG || {};
+const API_URL = String(CFG.API_URL || '');
+const ES_API = /^https:\/\/script\.google\.com\//.test(API_URL);
+const META = 3;      // expedientes que hay que explorar para otorgar insignias
+const PAGE = 9;      // proyectos por tanda en el scroll infinito
+const INSIGNIAS = [
+  { k: 'narrativa', label: 'Mejor Narrativa', emoji: '📖', color: 'var(--purple)' },
+  { k: 'mecanicas', label: 'Mejor Mecánica', emoji: '⚙️', color: 'var(--cyan2)' },
+  { k: 'impacto', label: 'Mayor Impacto', emoji: '🌎', color: 'var(--emerald)' },
+  { k: 'diversion', label: 'Más Divertido', emoji: '😄', color: 'var(--amber)' }
 ];
+const JUGADORES = ['Triunfador', 'Socializador', 'Espíritu libre', 'Filántropo', 'Jugador', 'Disruptor'];
+const IMPLEMENTACION = ['Prototipo de aula', 'Piloto con usuarios reales', 'Implementado por el cliente'];
+const TIPOS_REPORTE = ['Enlace roto o sin permiso', 'Dato incorrecto', 'Falta una autorización', 'Otro'];
+const EMOJI_ENFOQUE = { 'Desarrollo Sostenible': '🌱', 'Internacionalización': '🌎', 'Ética y Bienestar': '💚' };
+
+const ICON = {
+  heart: '<path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1 1.1L12 21.2l7.8-7.7 1-1.1a5.5 5.5 0 0 0 0-7.8z"/>',
+  star: '<polygon points="12 2 15.1 8.3 22 9.3 17 14.1 18.2 21 12 17.8 5.8 21 7 14.1 2 9.3 8.9 8.3 12 2"/>',
+  chat: '<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>',
+  share: '<path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/>',
+  cmp: '<polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/><line x1="4" y1="4" x2="9" y2="9"/>',
+  x: '<line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/>'
+};
+const svg = n => '<svg viewBox="0 0 24 24" aria-hidden="true">' + ICON[n] + '</svg>';
 
 /* ============================================================
    UTILIDADES
    ============================================================ */
-function esc(s) {
-  return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-}
-function urlSegura(u) { return /^https?:\/\//i.test(String(u || '').trim()) ? esc(String(u).trim()) : ''; }
+const $ = s => document.querySelector(s);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const norm = s => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
+const urlSegura = u => /^https?:\/\//i.test(String(u || '').trim()) ? esc(String(u).trim()) : '';
 function imagenDrive(u) {
   const s = String(u || '');
   const m = s.match(/\/d\/([A-Za-z0-9_-]{10,})/) || s.match(/[?&]id=([A-Za-z0-9_-]{10,})/);
   if (m && /google\.com/.test(s)) return 'https://drive.google.com/thumbnail?id=' + m[1] + '&sz=w1200';
   return urlSegura(s);
 }
-function norm(s) { return String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim(); }
-function totalVotos(p) { return CATEGORIAS.reduce((t, c) => t + (p.votos[c.k] || 0), 0); }
-function pctValidacion(p) {
+const store = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+};
+function nuevoId() {
+  try { if (crypto.randomUUID) return crypto.randomUUID(); } catch (e) {}
+  return 'v-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 12);
+}
+let toastT;
+function toast(m) { const t = $('#toast'); t.textContent = m; t.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 3000); }
+function copiar(texto) {
+  const ok = () => toast('Enlace copiado.');
+  const respaldo = () => {
+    const a = document.createElement('textarea'); a.value = texto; document.body.appendChild(a); a.select();
+    try { document.execCommand('copy'); ok(); } catch (e) { prompt('Copia este enlace:', texto); }
+    a.remove();
+  };
+  if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(texto).then(ok).catch(respaldo); else respaldo();
+}
+async function api(cuerpo) {
+  const r = await fetch(API_URL, { method: 'POST', body: JSON.stringify(cuerpo) });
+  const res = await r.json();
+  if (!res.ok) throw new Error(res.error || 'Error del servidor.');
+  return res;
+}
+
+/* ============================================================
+   ESTADO
+   ============================================================ */
+const estado = Object.assign({ visitante: nuevoId(), explorados: [], votos: {}, favs: [], tips: {}, autor: '' }, store.get('gamelab_v3', {}));
+const guardar = () => { store.set('gamelab_v3', estado); actualizarHUD(); };
+let DATA = { proyectos: [], formUrl: '', docentes: '' };
+let PARAMS = {};
+const cmp = [];
+let lista = [], mostrados = 0, cargandoMas = false;
+
+const buscar = id => DATA.proyectos.find(p => p.id === id);
+const nombres = p => p.integrantes.map(i => i.nombre);
+const votoDe = (p, k) => (p.votos && p.votos[k]) || 0;
+const totalInsignias = p => INSIGNIAS.reduce((t, c) => t + votoDe(p, c.k), 0);
+const misVotos = id => estado.votos[id] || [];
+function consejosDe(p) {
+  const aprobados = p.consejos || [];
+  const vistos = new Set(aprobados.map(c => c.texto.trim()));
+  const mios = (estado.tips[p.id] || []).filter(t => !vistos.has(t.t.trim()));
+  return { aprobados, mios };
+}
+const nConsejos = p => { const c = consejosDe(p); return c.aprobados.length + c.mios.length; };
+function pct(p) {
   const v = p.validacion || {};
   return v.puntaje ? Math.max(0, Math.min(100, Math.round(((v.puntaje - 1) / ((v.escalaMax || 5) - 1)) * 100))) : null;
 }
-function buscar(id) { return DATA.proyectos.find(p => p.id === id); }
-function enlace(param, valor) { return (DATA.appUrl || '') + '?' + param + '=' + encodeURIComponent(valor); }
-function nombres(p) { return p.integrantes.map(i => i.nombre); }
-function llamar(fn) {
-  const args = Array.prototype.slice.call(arguments, 1);
-  return new Promise((ok, mal) => google.script.run.withSuccessHandler(ok).withFailureHandler(mal)[fn].apply(null, args));
-}
-function toast(msg, tipo) {
-  const estilos = { info: 'border-cyan-500/50 text-cyan-200', ok: 'border-emerald-500/50 text-emerald-200', premio: 'border-amber-500/50 text-amber-200', error: 'border-rose-500/50 text-rose-200' };
-  const t = document.createElement('div');
-  t.className = 'pointer-events-auto px-4 py-3 rounded-xl border bg-slate-900 shadow-xl text-xs font-medium max-w-xs transition-all duration-300 opacity-0 translate-y-2 ' + (estilos[tipo] || estilos.info);
-  t.textContent = msg;
-  document.getElementById('toasts').appendChild(t);
-  requestAnimationFrame(() => t.classList.remove('opacity-0', 'translate-y-2'));
-  setTimeout(() => { t.classList.add('opacity-0'); setTimeout(() => t.remove(), 300); }, 3500);
-}
-function copiar(texto) {
-  const hecho = () => toast('Enlace copiado.', 'ok');
-  if (navigator.clipboard && window.isSecureContext) {
-    navigator.clipboard.writeText(texto).then(hecho).catch(() => copiarRespaldo(texto, hecho));
-  } else copiarRespaldo(texto, hecho);
-}
-function copiarRespaldo(texto, hecho) {
-  const a = document.createElement('textarea');
-  a.value = texto; document.body.appendChild(a); a.select();
-  try { document.execCommand('copy'); hecho(); } catch (e) { prompt('Copia este enlace:', texto); }
-  a.remove();
+function enlace(param, valor) { return location.origin + location.pathname + '?' + param + '=' + encodeURIComponent(valor); }
+function hueDe(id) { let h = 0; for (const c of String(id)) h = (h * 31 + c.charCodeAt(0)) % 360; return h; }
+
+/* ============================================================
+   DATOS DE DEMOSTRACIÓN (solo si no hay config.js)
+   ============================================================ */
+function crearDemo() {
+  const B = [
+    ['Eco-Héroes: Guardianes del Bosque', 'Social', 'Híbrido', 'Desarrollo Sostenible', '🌿'], ['BiblioQuest: El Archivo Perdido', 'Institucional', 'Digital', 'Internacionalización', '📚'],
+    ['Mente en Calma: Ruta Bienestar', 'Institucional', 'Análogo', 'Ética y Bienestar', '🧘'], ['Ruta Mochica: Crónicas del Sol', 'Social', 'Híbrido', 'Internacionalización', '🏺'],
+    ['Kafé & Código: Club de Lealtad', 'Comercial', 'Digital', 'Desarrollo Sostenible', '☕'], ['VeriCheck: Cazadores de Bulos', 'Social', 'Digital', 'Ética y Bienestar', '🔍'],
+    ['Eco-Héroes 2.0: Liga Verde', 'Social', 'Híbrido', 'Desarrollo Sostenible', '🌱'], ['Chan Chan Quest', 'Social', 'Híbrido', 'Internacionalización', '🗿'],
+    ['Misión Ingresante', 'Institucional', 'Digital', 'Internacionalización', '🎓'], ['Pausa Activa Arena', 'Institucional', 'Híbrido', 'Ética y Bienestar', '🏃'],
+    ['Marea Limpia', 'Social', 'Híbrido', 'Desarrollo Sostenible', '🌊'], ['Café Tostado Club', 'Comercial', 'Análogo', 'Desarrollo Sostenible', '🫘'],
+    ['Fake News Arcade', 'Social', 'Digital', 'Ética y Bienestar', '🕹️'], ['Voluntariado Level Up', 'Institucional', 'Digital', 'Ética y Bienestar', '🤝'],
+    ['Rumbo al Mundo', 'Institucional', 'Híbrido', 'Internacionalización', '✈️'], ['Mercado Verde', 'Comercial', 'Híbrido', 'Desarrollo Sostenible', '🥬'],
+    ['Radio Campus: Sintoniza y Gana', 'Institucional', 'Digital', 'Ética y Bienestar', '📻'], ['Tinta y Pixel', 'Institucional', 'Digital', 'Internacionalización', '✍️'],
+    ['Ahorra Agua Challenge', 'Social', 'Análogo', 'Desarrollo Sostenible', '💧'], ['Mi Primera Marca', 'Comercial', 'Digital', 'Internacionalización', '🚀'],
+    ['Salud Mental Squad', 'Social', 'Híbrido', 'Ética y Bienestar', '💬'], ['Reciclatón Universitaria', 'Social', 'Análogo', 'Desarrollo Sostenible', '♻️'],
+    ['Cultura Viva: Museo Quest', 'Social', 'Híbrido', 'Internacionalización', '🏛️'], ['Cadena de Favores', 'Social', 'Digital', 'Ética y Bienestar', '🎁']
+  ];
+  const NOM = ['Valeria Mendoza', 'Carlos Paredes', 'Diego Alarcón', 'Camila Ríos', 'Mateo Salazar', 'Fernanda Quispe', 'Jorge Huamán', 'Lucía Chávez', 'Sebastián Rojas', 'Andrea Castillo', 'Renzo Díaz', 'Gabriel Alva', 'Mariana Torres', 'Paola Zavaleta', 'Ximena León'];
+  const ROL = ['Dirección y narrativa', 'Mecánicas', 'Prototipo', 'Validación', 'Diseño visual'];
+  const HER = ['Genially', 'Figma', 'Canva', 'Unity', 'Web (HTML/JS)', 'Material físico'];
+  const SEM = ['2025-10', '2025-20', '2026-10', '2026-20'];
+  const rnd = i => { let s = i * 7919 + 17; return () => { s = (s * 16807) % 2147483647; return s / 2147483647; }; };
+  const ej = 'https://example.com';
+  return B.map((b, i) => {
+    const r = rnd(i + 1), n = 3 + Math.floor(r() * 2), esc7 = r() > .5 ? 7 : 5;
+    return {
+      id: 'GL-' + SEM[Math.min(3, Math.floor(i / 6))] + '-' + String(i + 1).padStart(3, '0'), semestre: SEM[Math.min(3, Math.floor(i / 6))],
+      titulo: b[0], emoji: b[4], contexto: b[1], entorno: b[2], enfoque: b[3], cliente: i % 3 === 1 ? 'Cliente de ejemplo' : '', implementacion: IMPLEMENTACION[Math.floor(r() * 3)],
+      distincion: i === 1 ? 'Mejor narrativa 2025-20' : i === 0 ? 'Mayor impacto social 2025-10' : '', base: i === 6 ? 'GL-2025-10-001' : '',
+      integrantes: Array.from({ length: n }, (_, k) => ({ nombre: NOM[(i * 2 + k * 3) % NOM.length], rol: ROL[k % 5] })),
+      problema: Math.round(55 + r() * 25) + '% del público objetivo presenta dificultades en este tema, según el diagnóstico del equipo.',
+      objetivo: 'Mejorar en ' + Math.round(25 + r() * 25) + '% el indicador principal durante un piloto de 4 semanas.',
+      publico: 'Jóvenes universitarios de 18 a 24 años.', jugadores: [JUGADORES[i % 6], JUGADORES[(i + 2) % 6]],
+      octalysis: ['Significado épico', 'Desarrollo y logro'], herramientas: [HER[i % 6], HER[(i + 3) % 6]],
+      imagen: '', prototipo: ej, video: ej, carpeta: ej, entregables: { mda: ej, fases6d: ej, canvas: ej, informe: i % 7 === 3 ? '' : ej },
+      validacion: { instrumento: esc7 === 7 ? 'GAMEFULQUEST' : 'GAMEX', escalaMax: esc7, puntaje: +(esc7 * (.62 + r() * .3)).toFixed(1), muestra: 25 + Math.floor(r() * 60) },
+      lecciones: 'Las misiones cortas funcionaron mejor.\nPenalizar errores desmotivó a los jugadores nuevos.', retomable: i % 2 === 0,
+      votos: { narrativa: Math.floor(r() * 30), mecanicas: Math.floor(r() * 30), impacto: Math.floor(r() * 30), diversion: Math.floor(r() * 30), like: 8 + Math.floor(r() * 50) },
+      consejos: i % 3 === 0 ? [{ autor: 'Camila R.', texto: 'Prueben una meta colectiva en vez del ranking individual.' }] : []
+    };
+  });
 }
 
 /* ============================================================
@@ -429,60 +511,42 @@ function copiarRespaldo(texto, hecho) {
    ============================================================ */
 async function iniciar() {
   try {
-    if (ES_GAS) {
-      const res = await Promise.all([llamar('obtenerDatos'), new Promise(r => google.script.url.getLocation(r))]);
-      DATA = res[0];
-      PARAMS = (res[1] && res[1].parameter) || {};
-    } else if (ES_API) {
+    if (ES_API) {
       const r = await fetch(API_URL + '?accion=datos');
       if (!r.ok) throw new Error('El servidor respondió ' + r.status + '.');
       DATA = await r.json();
-      DATA.appUrl = location.origin + location.pathname; // enlaces y QR apuntan a GitHub, no a Google
-      PARAMS = Object.fromEntries(new URLSearchParams(location.search));
     } else {
-      DATA = { proyectos: DEMO, formUrl: '', appUrl: location.href.split(/[?#]/)[0], docentes: 'Mgtr. Erincson Córdova / Mgtr. Víctor Cachay' };
-      PARAMS = Object.fromEntries(new URLSearchParams(location.search));
-      DATA.proyectos.forEach(p => (estado.votos[p.id] || []).forEach(c => { p.votos[c] = (p.votos[c] || 0) + 1; }));
-      document.getElementById('banner-demo').classList.remove('hidden');
+      DATA = { proyectos: crearDemo(), formUrl: '', docentes: 'Mgtr. Erincson Córdova / Mgtr. Víctor Cachay' };
+      DATA.proyectos.forEach(p => misVotos(p.id).forEach(k => { p.votos[k] = (p.votos[k] || 0) + 1; }));
+      $('#banner-demo').classList.remove('hidden');
     }
+    DATA.proyectos.forEach(p => { p.votos = p.votos || {}; p.consejos = p.consejos || []; p.integrantes = p.integrantes || []; p.jugadores = p.jugadores || []; p.herramientas = p.herramientas || []; p.octalysis = p.octalysis || []; p.entregables = p.entregables || {}; });
+    PARAMS = Object.fromEntries(new URLSearchParams(location.search));
   } catch (err) {
-    document.getElementById('cargando').classList.add('hidden');
-    document.getElementById('error').classList.remove('hidden');
-    document.getElementById('error-detalle').textContent = (err && err.message) || String(err);
+    $('#inicio').classList.add('hidden'); $('#error').classList.remove('hidden');
+    $('#error-detalle').textContent = (err && err.message) || String(err);
     return;
   }
-  document.getElementById('cargando').classList.add('hidden');
-  poblarFiltros();
-  configurarPublicar();
-  actualizarHUD();
-  cambiarVista('catalogo');
-  aplicarFiltros();
-  renderSalon();
-  renderListaEstudiantes();
-
+  $('#inicio').classList.add('hidden');
+  poblarFiltros(); configurarPublicar(); actualizarHUD();
+  cambiarVista('catalogo'); filtrar(); renderLista();
   if (PARAMS.proyecto) abrirProyecto(PARAMS.proyecto);
   else if (PARAMS.insignia) abrirInsignia(PARAMS.insignia, true);
   else if (PARAMS.estudiante) { cambiarVista('portafolio'); verEstudiante(PARAMS.estudiante); }
 }
 
 function poblarFiltros() {
-  const opciones = (id, valores, todos) => {
-    document.getElementById(id).innerHTML = '<option value="">' + todos + '</option>' + valores.map(v => '<option>' + esc(v) + '</option>').join('');
-  };
-  const semestres = [...new Set(DATA.proyectos.map(p => p.semestre))].sort().reverse();
-  const herramientas = [...new Set(DATA.proyectos.flatMap(p => p.herramientas))].sort();
-  opciones('f-semestre', semestres, 'Todos los ciclos');
-  opciones('f-jugador', MARCZEWSKI, 'Todos');
-  opciones('f-herramienta', herramientas, 'Todas');
-  opciones('f-implementacion', IMPLEMENTACION, 'Todos');
+  const op = (id, vals, todos) => { $(id).innerHTML = '<option value="">' + todos + '</option>' + vals.map(v => '<option>' + esc(v) + '</option>').join(''); };
+  op('#fSem', [...new Set(DATA.proyectos.map(p => p.semestre))].sort().reverse(), 'Ciclo');
+  op('#fJug', JUGADORES, 'Tipo de jugador');
+  op('#fHer', [...new Set(DATA.proyectos.flatMap(p => p.herramientas))].sort(), 'Herramienta');
+  op('#fImp', IMPLEMENTACION, 'Implementación');
 }
-
 function configurarPublicar() {
-  const btn = document.getElementById('btn-formulario');
-  if (DATA.formUrl) { btn.href = DATA.formUrl; return; }
-  btn.removeAttribute('href');
-  btn.classList.add('opacity-50', 'cursor-not-allowed');
-  document.getElementById('nota-formulario').textContent = 'El formulario se activa cuando el docente ejecuta la configuración en Apps Script.';
+  const b = $('#btn-form');
+  if (DATA.formUrl) { b.href = DATA.formUrl; return; }
+  b.removeAttribute('href'); b.style.opacity = .5; b.style.pointerEvents = 'none';
+  $('#nota-form').textContent = 'El formulario se activa cuando el docente completa la configuración en Apps Script.';
 }
 
 /* ============================================================
@@ -490,384 +554,302 @@ function configurarPublicar() {
    ============================================================ */
 function cambiarVista(v) {
   document.querySelectorAll('.vista').forEach(s => s.classList.add('hidden'));
-  document.getElementById('vista-' + v).classList.remove('hidden');
-  document.querySelectorAll('.nav-btn').forEach(b => {
-    const activo = b.dataset.vista === v;
-    b.classList.toggle('bg-cyan-500/15', activo); b.classList.toggle('text-cyan-300', activo); b.classList.toggle('border-cyan-500/30', activo);
-    b.classList.toggle('text-slate-300', !activo); b.classList.toggle('border-transparent', !activo);
-  });
+  $('#vista-' + v).classList.remove('hidden');
+  document.querySelectorAll('.tab').forEach(b => { if (b.dataset.vista === v) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current'); });
   if (v === 'salon') renderSalon();
-  window.scrollTo(0, 0);
+  scrollTo(0, 0);
 }
-
 function actualizarHUD() {
   const n = estado.explorados.length;
-  document.getElementById('hud-cuenta').textContent = Math.min(n, META) + '/' + META;
-  document.getElementById('hud-barra').style.width = Math.min(100, Math.round(n / META * 100)) + '%';
-  const rango = document.getElementById('hud-rango');
-  const icono = document.getElementById('hud-icono');
-  if (n >= META) {
-    rango.textContent = 'Juez Invitado GameLab'; rango.classList.add('text-amber-300');
-    icono.innerHTML = '<i class="fa-solid fa-medal"></i>'; icono.classList.add('bg-amber-500/20', 'border-amber-500/50');
-  } else rango.textContent = n > 0 ? 'Explorador Activo' : 'Explorador Novato';
-
-  const autores = new Set(DATA.proyectos.flatMap(p => nombres(p).map(norm)));
-  document.getElementById('kpi-proyectos').textContent = DATA.proyectos.length;
-  document.getElementById('kpi-ciclos').textContent = new Set(DATA.proyectos.map(p => p.semestre)).size;
-  document.getElementById('kpi-estudiantes').textContent = autores.size;
-  document.getElementById('kpi-insignias').textContent = DATA.proyectos.reduce((t, p) => t + totalVotos(p), 0);
+  $('#hud-cuenta').textContent = Math.min(n, META) + '/' + META;
+  $('#hud-barra').style.width = Math.min(100, Math.round(n / META * 100)) + '%';
+  $('#hud-rango').textContent = n >= META ? 'Juez Invitado' : n > 0 ? 'Explorador Activo' : 'Explorador Novato';
+  $('#hud-ico').textContent = n >= META ? '🏅' : '🧭';
+  $('#kpi-proyectos').textContent = DATA.proyectos.length;
+  $('#kpi-ciclos').textContent = new Set(DATA.proyectos.map(p => p.semestre)).size;
+  $('#kpi-estudiantes').textContent = new Set(DATA.proyectos.flatMap(p => nombres(p).map(norm))).size;
+  $('#kpi-insignias').textContent = DATA.proyectos.reduce((t, p) => t + totalInsignias(p), 0);
+  $('#favN').textContent = '(' + estado.favs.length + ')';
 }
 
 /* ============================================================
-   CATÁLOGO
+   CATÁLOGO: filtros + scroll infinito
    ============================================================ */
-function aplicarFiltros() {
-  const val = id => document.getElementById(id).value;
-  const q = norm(val('f-buscar'));
-  const lista = DATA.proyectos.filter(p => {
-    if (val('f-semestre') && p.semestre !== val('f-semestre')) return false;
-    if (val('f-contexto') && p.contexto !== val('f-contexto')) return false;
-    if (val('f-entorno') && p.entorno !== val('f-entorno')) return false;
-    if (val('f-enfoque') && p.enfoque !== val('f-enfoque')) return false;
-    if (val('f-jugador') && !p.jugadores.includes(val('f-jugador'))) return false;
-    if (val('f-herramienta') && !p.herramientas.includes(val('f-herramienta'))) return false;
-    if (val('f-implementacion') && p.implementacion !== val('f-implementacion')) return false;
+function filtrar() {
+  const v = id => $(id).value;
+  const q = norm(v('#q'));
+  const soloFav = $('#fFav').getAttribute('aria-pressed') === 'true';
+  lista = DATA.proyectos.filter(p => {
+    if (v('#fSem') && p.semestre !== v('#fSem')) return false;
+    if (v('#fCtx') && p.contexto !== v('#fCtx')) return false;
+    if (v('#fEnt') && p.entorno !== v('#fEnt')) return false;
+    if (v('#fEnf') && p.enfoque !== v('#fEnf')) return false;
+    if (v('#fJug') && !p.jugadores.includes(v('#fJug'))) return false;
+    if (v('#fHer') && !p.herramientas.includes(v('#fHer'))) return false;
+    if (v('#fImp') && p.implementacion !== v('#fImp')) return false;
+    if (soloFav && !estado.favs.includes(p.id)) return false;
     if (q && !norm([p.titulo, p.problema, p.cliente, p.enfoque, nombres(p).join(' ')].join(' ')).includes(q)) return false;
     return true;
-  }).sort((a, b) => b.semestre.localeCompare(a.semestre) || totalVotos(b) - totalVotos(a));
-
-  document.getElementById('conteo').textContent = '(' + lista.length + ')';
-  document.getElementById('vacio').classList.toggle('hidden', lista.length > 0);
-  document.getElementById('grilla').innerHTML = lista.map(tarjeta).join('');
+  }).sort((a, b) => b.semestre.localeCompare(a.semestre) || a.id.localeCompare(b.id));
+  mostrados = 0; $('#grid').innerHTML = '';
+  $('#vacio').classList.toggle('hidden', lista.length > 0);
+  cargarMas(true);
 }
+function cargarMas(inmediato) {
+  if (cargandoMas || mostrados >= lista.length) { pie(); return; }
+  cargandoMas = true;
+  const hacer = () => {
+    const lote = lista.slice(mostrados, mostrados + PAGE);
+    $('#grid').insertAdjacentHTML('beforeend', lote.map(tarjeta).join(''));
+    mostrados += lote.length; cargandoMas = false;
+    $('#cargando').classList.add('hidden'); pie();
+    requestAnimationFrame(() => { if (mostrados < lista.length && $('#sentinel').getBoundingClientRect().top < innerHeight + 300) cargarMas(); });
+  };
+  if (inmediato) hacer(); else { $('#cargando').classList.remove('hidden'); setTimeout(hacer, 350); }
+}
+function pie() {
+  $('#count').textContent = 'Mostrando ' + mostrados + ' de ' + lista.length;
+  const fin = lista.length > 0 && mostrados >= lista.length;
+  $('#fin').classList.toggle('hidden', !fin);
+  if (fin) $('#fin').innerHTML = '🏁 Llegaste al final · ' + lista.length + ' proyecto' + (lista.length === 1 ? '' : 's') + '<br><button class="linkbtn" data-accion="arriba">Volver arriba</button>';
+  $('#more').classList.toggle('hidden', !(mostrados < lista.length) || 'IntersectionObserver' in window);
+  actualizarHUD();
+}
+if ('IntersectionObserver' in window) new IntersectionObserver(es => { if (es[0].isIntersecting && !$('#vista-catalogo').classList.contains('hidden')) cargarMas(); }, { rootMargin: '500px' }).observe($('#sentinel'));
 
-function portada(p, alto) {
+function portada(p) {
   const img = imagenDrive(p.imagen);
-  return img
-    ? '<img src="' + img + '" alt="' + esc(p.titulo) + '" loading="lazy" class="w-full ' + alto + ' object-cover opacity-90" onerror="this.replaceWith(Object.assign(document.createElement(\'div\'),{className:\'w-full ' + alto + ' bg-gradient-to-br from-blue-950 via-slate-900 to-cyan-950\'}))" />'
-    : '<div class="w-full ' + alto + ' bg-gradient-to-br from-blue-950 via-slate-900 to-cyan-950 flex items-center justify-center"><i class="fa-solid fa-gamepad text-5xl text-cyan-500/30"></i></div>';
+  const h = hueDe(p.id), emoji = p.emoji || EMOJI_ENFOQUE[p.enfoque] || '🎮';
+  const fondo = 'linear-gradient(135deg,hsl(' + h + ' 75% 90%),hsl(' + ((h + 40) % 360) + ' 80% 78%))';
+  return '<div class="cover" style="background:' + fondo + '"><span aria-hidden="true">' + emoji + '</span>' +
+    (img ? '<img src="' + img + '" alt="" loading="lazy" onerror="this.remove()">' : '') + '</div>';
 }
-
+function rail(p) {
+  const fav = estado.favs.includes(p.id), like = misVotos(p.id).includes('like'), c = cmp.includes(p.id);
+  return '<div class="rail">' +
+    '<button class="act fav' + (fav ? ' on' : '') + '" data-a="fav" aria-pressed="' + fav + '" aria-label="Guardar en mi colección"><span class="ic">' + svg('heart') + '</span></button>' +
+    '<button class="act like' + (like ? ' on' : '') + '" data-a="like" aria-pressed="' + like + '" aria-label="Puntuar"><span class="ic">' + svg('star') + '</span><small>' + votoDe(p, 'like') + '</small></button>' +
+    '<button class="act" data-a="tips" aria-label="Consejos al equipo"><span class="ic">' + svg('chat') + '</span><small>' + nConsejos(p) + '</small></button>' +
+    '<button class="act" data-a="share" aria-label="Compartir"><span class="ic">' + svg('share') + '</span></button>' +
+    '<button class="act cmp' + (c ? ' on' : '') + '" data-a="cmp" aria-pressed="' + c + '" aria-label="Comparar"><span class="ic">' + svg('cmp') + '</span></button></div>';
+}
 function tarjeta(p) {
-  const explorado = estado.explorados.includes(p.id);
-  const pct = pctValidacion(p);
-  return '<article class="glass-panel rounded-2xl overflow-hidden flex flex-col card-hover">' +
-    '<div class="relative h-44 bg-slate-900 overflow-hidden">' + portada(p, 'h-44') +
-      '<div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/30 to-transparent"></div>' +
-      '<div class="absolute top-3 left-3 flex flex-wrap gap-1.5">' +
-        '<span class="px-2.5 py-1 rounded-lg bg-slate-950/85 text-[11px] font-bold text-cyan-300 border border-cyan-500/30">' + esc(p.semestre) + '</span>' +
-        '<span class="px-2.5 py-1 rounded-lg bg-slate-950/85 text-[11px] text-slate-200 border border-slate-700">' + esc(p.entorno) + '</span>' +
-        (p.base ? '<span class="px-2.5 py-1 rounded-lg bg-slate-950/85 text-[11px] text-emerald-300 border border-emerald-500/30"><i class="fa-solid fa-code-branch mr-1"></i>Versión 2</span>' : '') +
-      '</div>' +
-      (explorado ? '<span title="Ya lo exploraste" class="absolute top-3 right-3 w-7 h-7 rounded-full bg-emerald-500/20 border border-emerald-400/50 text-emerald-300 flex items-center justify-center text-xs"><i class="fa-solid fa-check"></i></span>' : '') +
-      '<div class="absolute bottom-3 left-3 right-3 flex items-center justify-between gap-2">' +
-        (p.distincion ? '<span class="text-[11px] font-semibold text-amber-200 bg-amber-500/20 border border-amber-500/40 px-2.5 py-0.5 rounded-full truncate"><i class="fa-solid fa-star mr-1"></i>' + esc(p.distincion) + '</span>'
-                      : '<span class="text-[11px] font-semibold text-slate-200 bg-slate-900/80 border border-slate-700 px-2.5 py-0.5 rounded-full truncate">' + esc(p.contexto) + ' · ' + esc(p.enfoque) + '</span>') +
-        '<span class="text-xs font-bold text-white bg-slate-900/90 px-2.5 py-1 rounded-lg border border-slate-700 shrink-0"><i class="fa-solid fa-award text-amber-400 mr-1"></i>' + totalVotos(p) + '</span>' +
-      '</div>' +
+  const v = p.validacion || {};
+  const visto = estado.explorados.includes(p.id);
+  const eq = nombres(p);
+  return '<article class="card" data-id="' + esc(p.id) + '">' +
+    '<div style="position:relative">' + portada(p) +
+      '<div class="badges"><span class="badge c">' + esc(p.semestre) + '</span><span class="badge">' + esc(p.entorno) + '</span>' +
+        (p.base ? '<span class="badge v2">Versión 2</span>' : '') + (p.distincion ? '<span class="badge star">⭐ ' + esc(p.distincion) + '</span>' : '') + '</div>' +
+      (visto ? '<span class="seen" title="Ya lo exploraste">✓</span>' : '') + rail(p) +
     '</div>' +
-    '<div class="p-5 flex-grow flex flex-col justify-between space-y-4">' +
-      '<div>' +
-        '<h4 class="font-display text-lg font-bold text-white leading-snug mb-2">' + esc(p.titulo) + '</h4>' +
-        '<p class="text-xs text-slate-300 line-clamp-3 leading-relaxed">' + esc(p.problema) + '</p>' +
-        '<div class="flex flex-wrap gap-1.5 mt-3">' + p.jugadores.slice(0, 3).map(j => '<span class="chip">' + esc(j) + '</span>').join('') + '</div>' +
-      '</div>' +
-      '<div class="space-y-3 pt-3 border-t border-slate-800/80">' +
-        '<div class="flex items-center justify-between gap-3 text-[11px] text-slate-400">' +
-          '<span class="truncate"><i class="fa-solid fa-users text-slate-500 mr-1.5"></i>' + esc(nombres(p).join(', ')) + '</span>' +
-          (pct !== null ? '<span class="text-emerald-400 font-medium shrink-0">' + esc(p.validacion.instrumento) + ' ' + p.validacion.puntaje + '/' + p.validacion.escalaMax + '</span>' : '') +
-        '</div>' +
-        '<div class="grid grid-cols-2 gap-2">' +
-          '<button data-abrir="' + esc(p.id) + '" class="py-2.5 px-3 rounded-xl bg-cyan-500/15 hover:bg-cyan-500/25 text-cyan-300 border border-cyan-500/30 font-semibold text-xs"><i class="fa-solid fa-folder-open mr-1"></i> Ver expediente</button>' +
-          (urlSegura(p.prototipo) ? '<a href="' + urlSegura(p.prototipo) + '" target="_blank" rel="noopener noreferrer" class="py-2.5 px-3 rounded-xl bg-upao-blue hover:bg-blue-600 text-white font-semibold text-xs text-center"><i class="fa-solid fa-play mr-1"></i> Probar demo</a>' : '<span></span>') +
-        '</div>' +
-      '</div>' +
-    '</div>' +
-  '</article>';
+    '<div class="body"><h4>' + esc(p.titulo) + '</h4><p>' + esc(p.problema) + '</p>' +
+      '<div class="chips">' + p.jugadores.slice(0, 2).map(j => '<span class="chip">' + esc(j) + '</span>').join('') + '<span class="chip">' + esc(p.contexto) + '</span></div>' +
+      '<div class="meta"><span>' + esc(eq.slice(0, 2).join(', ')) + (eq.length > 2 ? ' +' + (eq.length - 2) : '') + '</span>' + (pct(p) !== null ? '<b>' + v.puntaje + '/' + v.escalaMax + '</b>' : '') + '</div>' +
+      '<button class="btn" data-a="open">📂 Ver expediente</button></div></article>';
+}
+function refrescarTarjeta(id, accion) {
+  const card = document.querySelector('.card[data-id="' + CSS.escape(id) + '"]'); const p = buscar(id);
+  if (!card || !p) return;
+  const tmp = document.createElement('div'); tmp.innerHTML = rail(p);
+  card.querySelector('.rail').replaceWith(tmp.firstChild);
+  const b = card.querySelector('.act[data-a="' + accion + '"]'); if (b) b.classList.add('pop');
+  const seen = card.querySelector('.seen');
+  if (!seen && estado.explorados.includes(id)) card.firstChild.insertAdjacentHTML('beforeend', '<span class="seen" title="Ya lo exploraste">✓</span>');
 }
 
 /* ============================================================
-   EXPEDIENTE DEL PROYECTO
+   ACCIONES: guardar, puntuar, comparar, compartir
    ============================================================ */
-function abrirProyecto(id, opciones) {
-  const p = buscar(id);
-  if (!p) { toast('No se encontró el proyecto ' + id + '.', 'error'); return; }
-  const modal = document.getElementById('modal-proyecto');
-  const scroll = modal.scrollTop;
-
-  if (!estado.explorados.includes(p.id)) {
-    estado.explorados.push(p.id);
-    guardar();
-    aplicarFiltros();
-    const n = estado.explorados.length;
-    if (n === META) toast('¡Misión cumplida! Ya eres Juez Invitado y puedes otorgar insignias.', 'premio');
-    else if (n < META) toast('Expediente explorado (' + n + '/' + META + ' para poder votar).', 'info');
-  }
-
-  document.getElementById('modal-etiquetas').innerHTML =
-    '<span class="px-2.5 py-1 rounded-lg bg-upao-blue/30 border border-blue-500/40 text-blue-300 text-xs font-bold">Ciclo ' + esc(p.semestre) + '</span>' +
-    '<span class="px-2.5 py-1 rounded-lg bg-slate-800 text-slate-300 text-xs">' + esc(p.contexto) + ' · ' + esc(p.enfoque) + '</span>' +
-    '<span class="px-2.5 py-1 rounded-lg bg-slate-800 text-cyan-300 text-xs">' + esc(p.entorno) + '</span>' +
-    '<span class="px-2.5 py-1 rounded-lg bg-slate-800 text-slate-400 text-xs font-mono">' + esc(p.id) + '</span>';
-
-  const base = p.base ? buscar(p.base) : null;
-  const derivados = DATA.proyectos.filter(x => x.base === p.id);
-  const pct = pctValidacion(p);
-  const v = p.validacion || {};
-  const ent = p.entregables || {};
-  const fases = [
-    ['mda', 'FASE 01', 'Framework MDA', 'Mecánicas, dinámicas y estética'],
-    ['fases6d', 'FASE 02', 'Diseño 6D y 4 Fases', 'Octalysis y viaje del jugador'],
-    ['canvas', 'FASE 03', 'Model Canvas', 'Sostenibilidad y canales'],
-    ['informe', 'FASE 04', 'Validación lúdica', 'GAMEFULQUEST / GAMEX']
-  ];
-  const mios = estado.votos[p.id] || [];
-  const bloqueado = estado.explorados.length < META;
-
-  document.getElementById('modal-cuerpo').innerHTML =
-    // Cabecera
-    '<div class="flex flex-col lg:flex-row justify-between gap-6 items-start">' +
-      '<div class="space-y-3 max-w-2xl">' +
-        (p.distincion ? '<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/15 border border-amber-500/40 text-amber-300 text-xs font-semibold"><i class="fa-solid fa-star"></i>' + esc(p.distincion) + '</span>' : '') +
-        '<h2 class="font-display text-2xl sm:text-3xl font-bold text-white">' + esc(p.titulo) + '</h2>' +
-        '<div class="flex flex-wrap gap-2">' + p.integrantes.map(i =>
-          '<button data-estudiante="' + esc(i.nombre) + '" class="text-left px-3 py-1.5 rounded-xl bg-slate-800/80 hover:bg-slate-700 border border-slate-700 text-xs">' +
-          '<span class="text-white font-semibold">' + esc(i.nombre) + '</span>' + (i.rol ? '<span class="block text-[11px] text-slate-400">' + esc(i.rol) + '</span>' : '') + '</button>').join('') + '</div>' +
-        '<p class="text-xs text-slate-400"><strong class="text-slate-300">Asesoría:</strong> ' + esc(DATA.docentes) + '</p>' +
-      '</div>' +
-      '<div class="flex flex-wrap gap-2.5 w-full lg:w-auto">' +
-        (urlSegura(p.prototipo) ? '<a href="' + urlSegura(p.prototipo) + '" target="_blank" rel="noopener noreferrer" class="flex-1 sm:flex-none px-5 py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-bold text-sm text-center"><i class="fa-solid fa-gamepad mr-1.5"></i>Probar prototipo</a>' : '') +
-        '<button data-insignia="' + esc(p.id) + '" class="flex-1 sm:flex-none px-4 py-3 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/40 font-semibold text-sm"><i class="fa-solid fa-medal mr-1.5"></i>Insignia</button>' +
-        '<button data-copiar="' + esc(enlace('proyecto', p.id)) + '" class="flex-1 sm:flex-none px-4 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-sm"><i class="fa-solid fa-link mr-1.5"></i>Compartir</button>' +
-      '</div>' +
-    '</div>' +
-
-    // Ficha
-    '<div class="flex flex-wrap gap-2">' +
-      (p.cliente ? '<span class="chip"><i class="fa-solid fa-handshake text-emerald-400"></i>Cliente: ' + esc(p.cliente) + '</span>' : '<span class="chip"><i class="fa-solid fa-chalkboard text-slate-400"></i>Caso de aula</span>') +
-      '<span class="chip"><i class="fa-solid fa-signal text-cyan-400"></i>' + esc(p.implementacion) + '</span>' +
-      p.herramientas.map(h => '<span class="chip"><i class="fa-solid fa-screwdriver-wrench text-slate-400"></i>' + esc(h) + '</span>').join('') +
-    '</div>' +
-
-    // Linaje
-    ((base || p.base || derivados.length) ?
-      '<div class="bg-emerald-950/30 border border-emerald-500/30 rounded-2xl p-4 text-xs text-emerald-100 space-y-1.5">' +
-        '<div class="font-bold uppercase tracking-wider text-emerald-400"><i class="fa-solid fa-code-branch mr-1.5"></i>Evolución entre ciclos</div>' +
-        (base ? '<div>Retoma: <button data-abrir="' + esc(base.id) + '" class="underline hover:text-white">' + esc(base.titulo) + ' (' + esc(base.semestre) + ')</button></div>'
-              : (p.base ? '<div>Retoma el proyecto ' + esc(p.base) + '.</div>' : '')) +
-        derivados.map(d => '<div>Continuado en: <button data-abrir="' + esc(d.id) + '" class="underline hover:text-white">' + esc(d.titulo) + ' (' + esc(d.semestre) + ')</button></div>').join('') +
-      '</div>' : '') +
-
-    // Diagnóstico
-    '<div class="grid md:grid-cols-3 gap-4">' +
-      '<div class="bg-slate-950/70 border border-slate-800 p-4 rounded-2xl"><div class="text-xs font-bold uppercase tracking-wider text-rose-400 mb-2"><i class="fa-solid fa-chart-pie mr-1.5"></i>Problema con datos</div><p class="text-sm text-slate-300 leading-relaxed pre">' + esc(p.problema) + '</p></div>' +
-      '<div class="bg-slate-950/70 border border-slate-800 p-4 rounded-2xl"><div class="text-xs font-bold uppercase tracking-wider text-emerald-400 mb-2"><i class="fa-solid fa-bullseye mr-1.5"></i>Objetivo SMART</div><p class="text-sm text-slate-300 leading-relaxed pre">' + esc(p.objetivo) + '</p></div>' +
-      '<div class="bg-slate-950/70 border border-slate-800 p-4 rounded-2xl"><div class="text-xs font-bold uppercase tracking-wider text-cyan-400 mb-2"><i class="fa-solid fa-user-astronaut mr-1.5"></i>Público y jugadores</div><p class="text-sm text-slate-300 leading-relaxed pre mb-2">' + esc(p.publico) + '</p>' +
-        '<div class="flex flex-wrap gap-1.5">' + p.jugadores.map(j => '<span class="chip">' + esc(j) + '</span>').join('') + '</div></div>' +
-    '</div>' +
-    (p.octalysis.length ? '<div><div class="text-xs font-bold uppercase tracking-wider text-blue-300 mb-2"><i class="fa-solid fa-shapes mr-1.5"></i>Impulsos Octalysis</div><div class="flex flex-wrap gap-1.5">' +
-      p.octalysis.map(o => '<span class="chip border-blue-500/40 text-blue-200">' + esc(o) + '</span>').join('') + '</div></div>' : '') +
-
-    // Ruta metodológica
-    '<div class="bg-slate-950/80 border border-slate-800 p-5 sm:p-6 rounded-2xl">' +
-      '<h3 class="font-display font-bold text-white text-lg mb-1">Ruta metodológica</h3>' +
-      '<p class="text-xs text-slate-400 mb-4">Cada documento se abre en Google Drive.</p>' +
-      '<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">' + fases.map(f => {
-        const u = urlSegura(ent[f[0]]);
-        return u
-          ? '<a href="' + u + '" target="_blank" rel="noopener noreferrer" class="group p-3.5 rounded-xl bg-slate-900 border border-slate-700/80 hover:border-cyan-400 transition"><div class="flex justify-between text-cyan-400 mb-2"><span class="text-[11px] font-mono font-bold">' + f[1] + '</span><i class="fa-solid fa-arrow-up-right-from-square text-xs opacity-60 group-hover:opacity-100"></i></div><div class="font-bold text-white text-sm">' + f[2] + '</div><div class="text-[11px] text-slate-400 mt-1">' + f[3] + '</div></a>'
-          : '<div class="p-3.5 rounded-xl bg-slate-900/50 border border-dashed border-slate-700 opacity-60"><div class="text-[11px] font-mono font-bold text-slate-500 mb-2">' + f[1] + '</div><div class="font-bold text-slate-400 text-sm">' + f[2] + '</div><div class="text-[11px] text-slate-500 mt-1">No disponible</div></div>';
-      }).join('') + '</div>' +
-    '</div>' +
-
-    // Validación + multimedia
-    '<div class="grid md:grid-cols-2 gap-4">' +
-      '<div class="bg-slate-950 border border-slate-800 p-5 rounded-2xl">' +
-        '<span class="text-xs font-bold uppercase tracking-wider text-emerald-400"><i class="fa-solid fa-flask-vial mr-1.5"></i>Resultado de validación</span>' +
-        (pct !== null
-          ? '<div class="flex items-end gap-2 mt-3"><span class="font-display text-4xl font-bold text-white">' + v.puntaje + '</span><span class="text-sm text-slate-400 mb-1">/ ' + v.escalaMax + ' · ' + esc(v.instrumento) + '</span></div>' +
-            '<div class="w-full h-2.5 bg-slate-800 rounded-full overflow-hidden mt-3"><div class="h-full bg-gradient-to-r from-emerald-500 to-cyan-400" style="width:' + pct + '%"></div></div>' +
-            '<p class="text-xs text-slate-400 mt-2">' + (v.muestra ? 'Aplicado a ' + v.muestra + ' participantes.' : '') + '</p>'
-          : '<p class="text-sm text-slate-400 mt-3">Sin puntaje registrado.</p>') +
-      '</div>' +
-      '<div class="bg-slate-950 border border-slate-800 p-5 rounded-2xl space-y-3">' +
-        '<span class="text-xs font-bold uppercase tracking-wider text-amber-400"><i class="fa-solid fa-video mr-1.5"></i>Sustentación</span>' +
-        '<p class="text-xs text-slate-400">Video pitch de 3 minutos y carpeta completa del proyecto.</p>' +
-        '<div class="flex flex-wrap gap-2">' +
-          (urlSegura(p.video) ? '<a href="' + urlSegura(p.video) + '" target="_blank" rel="noopener noreferrer" class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold"><i class="fa-solid fa-play text-cyan-400 mr-1.5"></i>Video pitch</a>' : '') +
-          (urlSegura(p.carpeta) ? '<a href="' + urlSegura(p.carpeta) + '" target="_blank" rel="noopener noreferrer" class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold"><i class="fa-brands fa-google-drive text-emerald-400 mr-1.5"></i>Carpeta del proyecto</a>' : '') +
-        '</div>' +
-      '</div>' +
-    '</div>' +
-
-    // Lecciones
-    (p.lecciones ? '<div class="bg-blue-950/30 border border-blue-500/30 rounded-2xl p-5">' +
-      '<div class="text-xs font-bold uppercase tracking-wider text-blue-300 mb-2"><i class="fa-solid fa-lightbulb mr-1.5"></i>Lecciones aprendidas del equipo</div>' +
-      '<p class="text-sm text-slate-200 leading-relaxed pre">' + esc(p.lecciones) + '</p>' +
-      (p.retomable ? '<div class="mt-4 pt-4 border-t border-blue-500/20 flex flex-wrap items-center justify-between gap-3">' +
-        '<p class="text-xs text-slate-300">Este equipo autoriza que otro grupo lo retome y lo mejore.</p>' +
-        '<button data-retomar="' + esc(p.id) + '" class="px-4 py-2 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/40 text-xs font-semibold"><i class="fa-solid fa-code-branch mr-1.5"></i>Retomar este proyecto</button></div>' : '') +
-    '</div>' : '') +
-
-    // Votación
-    '<div class="border-t border-slate-800 pt-6">' +
-      '<div class="flex flex-wrap items-center justify-between gap-2 mb-4">' +
-        '<div><h4 class="font-display font-bold text-white text-base">Otorga insignias populares</h4>' +
-        '<p class="text-xs text-slate-400">' + (bloqueado ? '<i class="fa-solid fa-lock mr-1"></i>Explora ' + META + ' expedientes para desbloquear tu voto (' + estado.explorados.length + '/' + META + ').' : 'Puedes otorgar una insignia por categoría.') + '</p></div>' +
-        '<span class="text-xs font-mono text-cyan-400">Total: ' + totalVotos(p) + '</span>' +
-      '</div>' +
-      '<div class="grid grid-cols-2 sm:grid-cols-4 gap-3">' + CATEGORIAS.map(c => {
-        const activo = mios.includes(c.k);
-        const clase = bloqueado ? 'bg-slate-950/40 border-slate-800 text-slate-500 cursor-not-allowed'
-          : activo ? 'bg-amber-500/20 border-amber-400 text-white' : 'bg-slate-950/60 border-slate-800 text-slate-300 hover:border-slate-600';
-        return '<button data-votar="' + esc(p.id) + '" data-cat="' + c.k + '" class="p-3 rounded-xl border text-left flex items-center justify-between gap-2 transition ' + clase + '">' +
-          '<div><div class="text-xs font-bold"><i class="fa-solid ' + c.icon + ' ' + c.color + ' mr-1"></i>' + c.label + '</div>' +
-          '<div class="text-[11px] text-slate-400 mt-0.5">' + (bloqueado ? 'Bloqueado' : activo ? '¡Otorgada!' : 'Clic para votar') + '</div></div>' +
-          '<span class="font-display font-bold px-2 py-0.5 rounded-lg bg-slate-900">' + (p.votos[c.k] || 0) + '</span></button>';
-      }).join('') + '</div>' +
-    '</div>';
-
-  modal.classList.remove('hidden');
-  modal.scrollTop = opciones && opciones.mantenerScroll ? scroll : 0;
+function alternar(arr, x) { const i = arr.indexOf(x); i > -1 ? arr.splice(i, 1) : arr.push(x); }
+function alternarFav(id) {
+  alternar(estado.favs, id); guardar(); refrescarTarjeta(id, 'fav'); pie();
+  toast(estado.favs.includes(id) ? 'Guardado en Mi colección ♥' : 'Quitado de tu colección');
+  if ($('#fFav').getAttribute('aria-pressed') === 'true') filtrar();
 }
-
 async function alternarVoto(id, cat) {
-  if (estado.explorados.length < META) { toast('Explora ' + META + ' expedientes para poder votar.', 'info'); return; }
-  const p = buscar(id);
-  if (!p) return;
-  const antes = (estado.votos[id] || []).slice();
+  if (cat !== 'like' && estado.explorados.length < META) { toast('Explora ' + META + ' expedientes para otorgar insignias.'); return; }
+  const p = buscar(id); if (!p) return;
+  const antes = misVotos(id).slice(), antesConteo = Object.assign({}, p.votos);
   const quitar = antes.includes(cat);
   estado.votos[id] = quitar ? antes.filter(c => c !== cat) : antes.concat(cat);
-  p.votos[cat] = Math.max(0, (p.votos[cat] || 0) + (quitar ? -1 : 1));
-  guardar();
-  refrescar(id);
-  toast(quitar ? 'Insignia retirada.' : '¡Insignia otorgada!', quitar ? 'info' : 'premio');
-
-  if (!ES_GAS && !ES_API) return;
+  p.votos[cat] = Math.max(0, votoDe(p, cat) + (quitar ? -1 : 1));
+  guardar(); refrescarTodo(id, cat === 'like' ? 'like' : null);
+  if (cat !== 'like') toast(quitar ? 'Insignia retirada.' : '¡Insignia otorgada!');
+  if (!ES_API) return;
   try {
-    const operacion = quitar ? 'quitar' : 'agregar';
-    if (ES_GAS) {
-      p.votos = await llamar('registrarVoto', id, cat, estado.visitante, operacion);
-    } else {
-      const r = await fetch(API_URL, {
-        method: 'POST',
-        body: JSON.stringify({ accion: 'votar', id: id, categoria: cat, visitante: estado.visitante, operacion: operacion })
-      });
-      const res = await r.json();
-      if (!res.ok) throw new Error(res.error);
-      p.votos = res.votos;
-    }
-    refrescar(id);
+    const res = await api({ accion: 'votar', id: id, categoria: cat, visitante: estado.visitante, operacion: quitar ? 'quitar' : 'agregar' });
+    p.votos = Object.assign({}, p.votos, res.votos); refrescarTodo(id);
   } catch (e) {
-    estado.votos[id] = antes;
-    p.votos[cat] = Math.max(0, (p.votos[cat] || 0) + (quitar ? 1 : -1));
-    guardar();
-    refrescar(id);
-    toast('No se pudo registrar el voto. Intenta de nuevo.', 'error');
+    estado.votos[id] = antes; p.votos = antesConteo; guardar(); refrescarTodo(id);
+    toast('No se pudo registrar. Intenta de nuevo.');
   }
 }
-function refrescar(id) {
-  if (!document.getElementById('modal-proyecto').classList.contains('hidden')) abrirProyecto(id, { mantenerScroll: true });
-  aplicarFiltros();
-  renderSalon();
+function refrescarTodo(id, accion) {
+  refrescarTarjeta(id, accion || 'like');
+  if (!$('#ov').classList.contains('hidden') && $('#ov').dataset.id === id) abrirProyecto(id, { mantener: true });
+  if (!$('#vista-salon').classList.contains('hidden')) renderSalon();
   actualizarHUD();
+}
+
+function alternarComparar(id) {
+  const i = cmp.indexOf(id);
+  if (i > -1) cmp.splice(i, 1); else { if (cmp.length >= 3) { toast('Puedes comparar hasta 3 proyectos.'); return; } cmp.push(id); }
+  refrescarTarjeta(id, 'cmp'); barraComparar();
+}
+function barraComparar() {
+  $('#cmpbar').classList.toggle('hidden', cmp.length === 0);
+  $('#cmpTxt').textContent = cmp.length + ' de 3 seleccionados' + (cmp.length < 2 ? ' · elige al menos 2' : '');
+  $('#cmpGo').disabled = cmp.length < 2;
+}
+function verComparacion() {
+  if (cmp.length < 2) return;
+  const ps = cmp.map(buscar); const maxPct = Math.max.apply(null, ps.map(p => pct(p) || 0));
+  const fila = (t, f, mejor) => '<tr><th>' + t + '</th>' + ps.map(p => '<td' + (mejor && mejor(p) ? ' class="best"' : '') + '>' + f(p) + '</td>').join('') + '</tr>';
+  modal2('<div class="sheet"><div class="sh-top"><b>Comparación</b>' + cerrarBtn(2) + '</div><div class="sh-body"><div class="tblw"><table class="cmpt">' +
+    '<tr><th></th>' + ps.map(p => '<td><b>' + esc(p.titulo) + '</b></td>').join('') + '</tr>' +
+    fila('Ciclo', p => esc(p.semestre)) + fila('Contexto', p => esc(p.contexto)) + fila('Entorno', p => esc(p.entorno)) + fila('Enfoque', p => esc(p.enfoque)) +
+    fila('Nivel', p => esc(p.implementacion)) + fila('Hecho en', p => esc(p.herramientas.join(', '))) + fila('Jugadores', p => esc(p.jugadores.join(', '))) +
+    fila('Validación', p => pct(p) === null ? '—' : p.validacion.puntaje + ' / ' + p.validacion.escalaMax + ' (' + pct(p) + '%)', p => pct(p) !== null && pct(p) === maxPct) +
+    fila('Muestra', p => (p.validacion && p.validacion.muestra) || '—') + fila('Equipo', p => p.integrantes.length + ' integrantes') +
+    '</table></div><p style="color:var(--mut);font-size:14px;margin:0">El porcentaje convierte cada escala (1–5 o 1–7) a una misma base para compararlas.</p></div></div>');
+}
+function abrirCompartir(id) {
+  const p = buscar(id); const url = enlace('proyecto', id);
+  const texto = '¡Mira este proyecto de gamificación de la UPAO: ' + p.titulo + '! ' + url;
+  modal2('<div class="sheet sm"><div class="sh-top"><b>Compartir proyecto</b>' + cerrarBtn(2) + '</div><div class="sh-body">' +
+    '<div><b>' + esc(p.titulo) + '</b><div style="color:var(--mut);font-size:14px">' + esc(p.semestre) + ' · ' + esc(p.contexto) + '</div></div>' +
+    '<a class="btn wa" href="https://wa.me/?text=' + encodeURIComponent(texto) + '" target="_blank" rel="noopener noreferrer">Enviar por WhatsApp</a>' +
+    '<button class="btn sec" data-copiar="' + esc(url) + '">Copiar enlace</button></div></div>');
+}
+
+/* ============================================================
+   EXPEDIENTE
+   ============================================================ */
+function abrirProyecto(id, op) {
+  op = op || {};
+  const p = buscar(id);
+  if (!p) { toast('No se encontró el proyecto ' + id + '.'); return; }
+  const ov = $('#ov'); const scroll = ov.scrollTop;
+  if (!estado.explorados.includes(p.id)) {
+    estado.explorados.push(p.id); guardar(); refrescarTarjeta(p.id, 'like');
+    const n = estado.explorados.length;
+    if (n === META) toast('¡Misión cumplida! Ya eres Juez Invitado y puedes otorgar insignias.');
+    else if (n < META) toast('Expediente explorado (' + n + '/' + META + ' para poder votar).');
+  }
+  const base = p.base ? buscar(p.base) : null, derivados = DATA.proyectos.filter(x => x.base === p.id);
+  const v = p.validacion || {}, ent = p.entregables, pc = pct(p);
+  const fases = [['mda', 'FASE 01', 'Framework MDA', 'Mecánicas, dinámicas y estética'], ['fases6d', 'FASE 02', 'Diseño 6D y 4 Fases', 'Octalysis y viaje del jugador'], ['canvas', 'FASE 03', 'Model Canvas', 'Sostenibilidad y canales'], ['informe', 'FASE 04', 'Validación lúdica', 'GAMEFULQUEST / GAMEX']];
+  const mios = misVotos(p.id), bloqueado = estado.explorados.length < META;
+  const { aprobados, mios: pend } = consejosDe(p);
+  const html = '<div class="sheet"><div class="sh-top"><div class="chips"><span class="chip bl"><b>Ciclo ' + esc(p.semestre) + '</b></span><span class="chip">' + esc(p.contexto) + ' · ' + esc(p.enfoque) + '</span><span class="chip">' + esc(p.entorno) + '</span><span class="chip">' + esc(p.id) + '</span></div>' + cerrarBtn(1) + '</div><div class="sh-body">' +
+    (p.distincion ? '<span class="kicker" style="justify-self:start">⭐ ' + esc(p.distincion) + '</span>' : '') +
+    '<h2>' + esc(p.titulo) + '</h2>' +
+    '<div class="team">' + p.integrantes.map(i => '<button class="person" data-estudiante="' + esc(i.nombre) + '"><b>' + esc(i.nombre) + '</b>' + (i.rol ? '<small>' + esc(i.rol) + '</small>' : '') + '</button>').join('') + '</div>' +
+    '<div style="color:var(--mut);font-size:14.5px">Asesoría: ' + esc(DATA.docentes || '') + '</div>' +
+    '<div class="row">' + (urlSegura(p.prototipo) ? '<a class="btn pri" href="' + urlSegura(p.prototipo) + '" target="_blank" rel="noopener noreferrer">🎮 Probar prototipo</a>' : '') +
+      '<button class="btn gold" data-insignia="' + esc(p.id) + '">🏅 Insignia</button><button class="btn sec" data-a="share">🔗 Compartir</button></div>' +
+    '<div class="chips">' + (p.cliente ? '<span class="chip am">🤝 Cliente: ' + esc(p.cliente) + '</span>' : '<span class="chip">🏫 Caso de aula</span>') + '<span class="chip">' + esc(p.implementacion) + '</span>' + p.herramientas.map(h => '<span class="chip">🛠 ' + esc(h) + '</span>').join('') + '</div>' +
+    ((base || p.base || derivados.length) ? '<div class="lineage"><span class="t">🔀 Evolución entre ciclos</span>' +
+      (base ? '<div>Retoma: <button class="linkbtn" style="padding:0" data-abrir="' + esc(base.id) + '">' + esc(base.titulo) + ' (' + esc(base.semestre) + ')</button></div>' : (p.base ? '<div>Retoma el proyecto ' + esc(p.base) + '.</div>' : '')) +
+      derivados.map(d => '<div>Continuado en: <button class="linkbtn" style="padding:0" data-abrir="' + esc(d.id) + '">' + esc(d.titulo) + ' (' + esc(d.semestre) + ')</button></div>').join('') + '</div>' : '') +
+    '<div class="three"><div class="box"><h5 style="color:var(--rose)">Problema con datos</h5><p>' + esc(p.problema) + '</p></div><div class="box"><h5 style="color:var(--emerald)">Objetivo SMART</h5><p>' + esc(p.objetivo) + '</p></div>' +
+      '<div class="box"><h5 style="color:var(--cyan2)">Público y jugadores</h5><p>' + esc(p.publico) + '</p><div class="chips" style="margin-top:8px">' + p.jugadores.map(j => '<span class="chip">' + esc(j) + '</span>').join('') + '</div></div></div>' +
+    (p.octalysis.length ? '<div><h5 style="margin:0 0 6px;font-size:13.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--blue)">Impulsos Octalysis</h5><div class="chips">' + p.octalysis.map(o => '<span class="chip bl">' + esc(o) + '</span>').join('') + '</div></div>' : '') +
+    '<div class="box"><h5 style="color:var(--txt);font-size:16px;text-transform:none;letter-spacing:0">Ruta metodológica</h5><p style="font-size:14.5px;margin-bottom:10px">Cada documento se abre en Google Drive.</p><div class="ruta">' + fases.map(f => {
+      const u = urlSegura(ent[f[0]]);
+      return u ? '<a class="fase" href="' + u + '" target="_blank" rel="noopener noreferrer"><i>' + f[1] + '</i><b>' + f[2] + '</b><span>' + f[3] + '</span></a>'
+               : '<div class="fase off"><i>' + f[1] + '</i><b>' + f[2] + '</b><span>No disponible</span></div>'; }).join('') + '</div></div>' +
+    '<div class="two"><div class="box"><h5 style="color:var(--emerald)">Resultado de validación</h5>' + (pc !== null
+        ? '<div class="bigscore">' + v.puntaje + '<span style="font-size:16px;color:var(--mut);font-weight:500"> / ' + v.escalaMax + ' · ' + esc(v.instrumento) + '</span></div><div class="track"><i style="width:' + pc + '%"></i></div>' + (v.muestra ? '<p style="margin-top:8px;font-size:14px">Aplicado a ' + v.muestra + ' participantes.</p>' : '')
+        : '<p>Sin puntaje registrado.</p>') + '</div>' +
+      '<div class="box"><h5 style="color:var(--amber)">Sustentación</h5><p style="font-size:14.5px;margin-bottom:10px">Video pitch de 3 minutos y carpeta completa.</p><div class="row">' +
+        (urlSegura(p.video) ? '<a class="btn sec sm" href="' + urlSegura(p.video) + '" target="_blank" rel="noopener noreferrer">▶ Video pitch</a>' : '') +
+        (urlSegura(p.carpeta) ? '<a class="btn sec sm" href="' + urlSegura(p.carpeta) + '" target="_blank" rel="noopener noreferrer">📁 Carpeta</a>' : '') + '</div></div></div>' +
+    (p.lecciones ? '<div class="box" style="background:#eff6ff;border-color:#93c5fd"><h5 style="color:#1e3a8a">💡 Lecciones aprendidas del equipo</h5><p>' + esc(p.lecciones) + '</p>' +
+      (p.retomable ? '<div style="margin-top:12px;padding-top:12px;border-top:1px solid #bfdbfe" class="row"><span style="flex:2 1 220px;font-size:14.5px">Este equipo autoriza que otro grupo lo retome y lo mejore.</span><button class="btn gold sm" data-retomar="' + esc(p.id) + '">🔀 Retomar este proyecto</button></div>' : '') + '</div>' : '') +
+    '<div class="box" id="consejos"><h5 style="color:var(--amber)">💬 Consejos para el equipo (' + (aprobados.length + pend.length) + ')</h5><div style="display:grid;gap:8px;margin-bottom:12px">' +
+      (aprobados.map(t => '<div class="tip">' + esc(t.texto) + '<small>' + esc(t.autor || 'Anónimo') + '</small></div>').join('') || (pend.length ? '' : '<p style="font-size:15px">Aún no hay consejos. ¡Sé la primera persona!</p>')) +
+      pend.map(t => '<div class="tip pend">' + esc(t.t) + '<small>Pendiente de aprobación · solo lo ves tú</small></div>').join('') + '</div>' +
+      '<input id="tipAutor" class="f" maxlength="40" placeholder="Tu nombre (opcional)" value="' + esc(estado.autor) + '" style="margin-bottom:8px" />' +
+      '<textarea id="tipTxt" maxlength="280" placeholder="Escribe un consejo útil y respetuoso (máx. 280). No incluyas datos personales."></textarea>' +
+      '<button class="btn" id="tipSend" style="margin-top:10px">Enviar para revisión docente</button></div>' +
+    '<div class="box"><h5 style="margin-bottom:4px">Otorga insignias populares</h5><p style="font-size:14.5px;margin-bottom:10px">' + (bloqueado ? '🔒 Explora ' + META + ' expedientes para desbloquear tu voto (' + estado.explorados.length + '/' + META + ').' : 'Puedes otorgar una insignia por categoría.') + '</p><div class="votes">' +
+      INSIGNIAS.map(c => { const on = mios.includes(c.k);
+        return '<button class="vote' + (bloqueado ? ' lock' : on ? ' on' : '') + '" data-votar="' + c.k + '"><div><b>' + c.emoji + ' ' + c.label + '</b><small>' + (bloqueado ? 'Bloqueado' : on ? '¡Otorgada!' : 'Toca para votar') + '</small></div><span class="n">' + votoDe(p, c.k) + '</span></button>'; }).join('') + '</div></div>' +
+    '<button class="btn warn" data-accion="reportar">⚑ Reportar un problema en este proyecto</button>' +
+  '</div></div>';
+  ov.dataset.id = p.id; ov.innerHTML = html; ov.classList.remove('hidden'); document.body.style.overflow = 'hidden';
+  ov.scrollTop = op.mantener ? scroll : 0;
+  if (op.aConsejos) setTimeout(() => $('#consejos').scrollIntoView({ behavior: 'smooth', block: 'start' }), 60);
+}
+async function enviarConsejo(id) {
+  const t = $('#tipTxt').value.trim(), a = $('#tipAutor').value.trim();
+  if (t.length < 5) { toast('Escribe al menos 5 caracteres.'); return; }
+  const b = $('#tipSend'); b.disabled = true;
+  try {
+    if (ES_API) await api({ accion: 'consejo', id: id, autor: a, texto: t, visitante: estado.visitante });
+    (estado.tips[id] = estado.tips[id] || []).push({ t: t, a: a }); estado.autor = a; guardar();
+    toast(ES_API ? 'Consejo enviado: lo verá el equipo cuando el docente lo apruebe.' : 'Consejo guardado (demo).');
+    refrescarTarjeta(id, 'tips'); abrirProyecto(id, { aConsejos: true });
+  } catch (e) { b.disabled = false; toast(e.message || 'No se pudo enviar.'); }
+}
+function abrirReporte(id) {
+  const p = buscar(id);
+  modal2('<div class="sheet sm"><div class="sh-top"><b>Reportar un problema</b>' + cerrarBtn(2) + '</div><div class="sh-body">' +
+    '<div style="color:var(--mut)">' + esc(p.titulo) + '</div><select id="rTipo">' + TIPOS_REPORTE.map(t => '<option>' + t + '</option>').join('') + '</select>' +
+    '<textarea id="rTxt" maxlength="400" placeholder="Cuéntanos qué pasa (opcional)"></textarea><button class="btn pri" id="rSend">Enviar reporte</button></div></div>');
+  $('#rSend').onclick = async () => {
+    const b = $('#rSend'); b.disabled = true;
+    try {
+      if (ES_API) await api({ accion: 'reporte', id: id, tipo: $('#rTipo').value, detalle: $('#rTxt').value, visitante: estado.visitante });
+      cerrar(2); toast('Reporte registrado. ¡Gracias!');
+    } catch (e) { b.disabled = false; toast(e.message || 'No se pudo enviar.'); }
+  };
 }
 
 /* ============================================================
    SALÓN DE LA FAMA
    ============================================================ */
 function renderSalon() {
-  const orden = document.getElementById('orden-salon').value;
-  const ranking = DATA.proyectos.slice().sort((a, b) =>
-    orden === 'validacion' ? (pctValidacion(b) || 0) - (pctValidacion(a) || 0) : totalVotos(b) - totalVotos(a));
-
-  const medallas = [
-    ['1.º', 'border-amber-400/60', 'bg-amber-500/20 text-amber-300', 'fa-trophy text-amber-400'],
-    ['2.º', 'border-slate-400/50', 'bg-slate-500/20 text-slate-200', 'fa-medal text-slate-300'],
-    ['3.º', 'border-orange-500/50', 'bg-orange-500/20 text-orange-300', 'fa-award text-orange-400']
-  ];
-  document.getElementById('podio').innerHTML = ranking.slice(0, 3).map((p, i) => {
-    const m = medallas[i];
-    const valor = orden === 'validacion' ? (pctValidacion(p) !== null ? pctValidacion(p) + '%' : '—') : totalVotos(p) + ' <span class="text-xs font-normal text-slate-400">votos</span>';
-    return '<div class="glass-panel rounded-2xl border ' + m[1] + ' p-6 flex flex-col justify-between space-y-4">' +
-      '<div class="flex items-center justify-between"><span class="px-3 py-1 rounded-full text-xs font-bold ' + m[2] + '"><i class="fa-solid ' + m[3] + ' mr-1.5"></i>' + m[0] + ' puesto</span>' +
-      '<span class="font-display font-bold text-xl text-white">' + valor + '</span></div>' +
-      '<div><span class="text-[11px] text-cyan-400 font-semibold">' + esc(p.semestre) + ' · ' + esc(p.contexto) + '</span>' +
-      '<h4 class="font-display text-lg font-bold text-white mt-1">' + esc(p.titulo) + '</h4>' +
-      '<p class="text-xs text-slate-400 mt-1">' + esc(nombres(p).join(', ')) + '</p></div>' +
-      '<button data-abrir="' + esc(p.id) + '" class="w-full py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-cyan-300 text-xs font-semibold">Ver expediente</button></div>';
-  }).join('');
-
-  const conDistincion = DATA.proyectos.filter(p => p.distincion);
-  document.getElementById('bloque-distinciones').classList.toggle('hidden', !conDistincion.length);
-  document.getElementById('distinciones').innerHTML = conDistincion.map(p =>
-    '<button data-abrir="' + esc(p.id) + '" class="text-left glass-panel rounded-2xl p-5 border border-amber-500/30 hover:border-amber-400 transition">' +
-    '<div class="text-xs font-semibold text-amber-300 mb-1"><i class="fa-solid fa-star mr-1"></i>' + esc(p.distincion) + '</div>' +
-    '<div class="font-display font-bold text-white">' + esc(p.titulo) + '</div>' +
-    '<div class="text-[11px] text-slate-400 mt-1">' + esc(nombres(p).join(', ')) + '</div></button>').join('');
-
-  document.getElementById('tabla-salon').innerHTML = ranking.map((p, i) => {
-    const pct = pctValidacion(p);
-    return '<tr class="hover:bg-slate-800/40">' +
-      '<td class="py-3.5 px-4"><div class="font-semibold text-white flex items-center gap-2"><span class="text-xs font-mono text-slate-500">#' + (i + 1) + '</span>' +
-        '<button data-abrir="' + esc(p.id) + '" class="hover:text-cyan-400 text-left">' + esc(p.titulo) + '</button></div>' +
-        '<div class="text-[11px] text-slate-400">' + esc(nombres(p).join(', ')) + '</div></td>' +
-      '<td class="py-3.5 px-4 text-xs text-slate-300">' + esc(p.semestre) + '</td>' +
-      CATEGORIAS.map(c => '<td class="py-3.5 px-4 text-center text-xs font-mono text-slate-300">' + (p.votos[c.k] || 0) + '</td>').join('') +
-      '<td class="py-3.5 px-4 text-center text-xs font-mono text-emerald-300">' + (pct !== null ? p.validacion.puntaje + '/' + p.validacion.escalaMax : '—') + '</td>' +
-      '<td class="py-3.5 px-4 text-right font-display font-bold text-white">' + totalVotos(p) + '</td></tr>';
-  }).join('');
+  const orden = $('#orden').value;
+  const rk = DATA.proyectos.slice().sort((a, b) => orden === 'validacion' ? (pct(b) || 0) - (pct(a) || 0) : totalInsignias(b) - totalInsignias(a) || votoDe(b, 'like') - votoDe(a, 'like'));
+  const med = [['🥇 1.º puesto', 'g1'], ['🥈 2.º puesto', 'g2'], ['🥉 3.º puesto', 'g3']];
+  $('#podio').innerHTML = rk.slice(0, 3).map((p, i) => '<div class="pod ' + med[i][1] + '"><div class="rk">' + med[i][0] + ' · ' + (orden === 'validacion' ? (pct(p) !== null ? pct(p) + '%' : '—') : totalInsignias(p) + ' insignias') + '</div>' +
+    '<div><small style="color:var(--cyan2);font-weight:700">' + esc(p.semestre) + ' · ' + esc(p.contexto) + '</small><h4 style="margin:2px 0;font-size:18px">' + esc(p.titulo) + '</h4><small style="color:var(--mut)">' + esc(nombres(p).join(', ')) + '</small></div>' +
+    '<button class="btn sec sm" data-abrir="' + esc(p.id) + '">Ver expediente</button></div>').join('');
+  const dd = DATA.proyectos.filter(p => p.distincion);
+  $('#bloque-dist').classList.toggle('hidden', !dd.length);
+  $('#dist').innerHTML = dd.map(p => '<button data-abrir="' + esc(p.id) + '"><b class="s">⭐ ' + esc(p.distincion) + '</b><b>' + esc(p.titulo) + '</b><div style="color:var(--mut);font-size:14px">' + esc(nombres(p).join(', ')) + '</div></button>').join('');
+  $('#tabla').innerHTML = rk.map((p, i) => '<tr><td><span style="color:var(--mut);font-size:13px">#' + (i + 1) + '</span> <button class="linkbtn" style="padding:0;text-align:left;color:var(--txt);text-decoration:none;font-weight:600" data-abrir="' + esc(p.id) + '">' + esc(p.titulo) + '</button><div style="color:var(--mut);font-size:13.5px">' + esc(nombres(p).join(', ')) + '</div></td>' +
+    '<td>' + esc(p.semestre) + '</td>' + INSIGNIAS.map(c => '<td>' + votoDe(p, c.k) + '</td>').join('') + '<td>' + votoDe(p, 'like') + '</td><td style="color:var(--emerald);font-weight:600">' + (pct(p) !== null ? p.validacion.puntaje + '/' + p.validacion.escalaMax : '—') + '</td><td><b>' + totalInsignias(p) + '</b></td></tr>').join('');
 }
 
 /* ============================================================
    PORTAFOLIOS
    ============================================================ */
 function estudiantes() {
-  const mapa = {};
-  DATA.proyectos.forEach(p => p.integrantes.forEach(i => {
-    const k = norm(i.nombre);
-    if (!k) return;
-    if (!mapa[k]) mapa[k] = { nombre: i.nombre, proyectos: [] };
-    mapa[k].proyectos.push({ p: p, rol: i.rol });
-  }));
-  return Object.values(mapa).sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
+  const m = {};
+  DATA.proyectos.forEach(p => p.integrantes.forEach(i => { const k = norm(i.nombre); if (!k) return; (m[k] = m[k] || { nombre: i.nombre, proyectos: [] }).proyectos.push({ p: p, rol: i.rol }); }));
+  return Object.values(m).sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
 }
-
-function renderListaEstudiantes() {
-  const q = norm(document.getElementById('buscar-estudiante').value);
-  const lista = estudiantes().filter(e => !q || norm(e.nombre).includes(q));
-  document.getElementById('lista-estudiantes').innerHTML = lista.length
-    ? lista.map(e => '<button data-estudiante="' + esc(e.nombre) + '" class="w-full text-left px-3 py-2 rounded-xl hover:bg-slate-800 flex items-center justify-between">' +
-        '<span class="text-sm text-slate-200">' + esc(e.nombre) + '</span>' +
-        '<span class="text-[11px] text-slate-500">' + e.proyectos.length + ' proy.</span></button>').join('')
-    : '<p class="text-xs text-slate-500 px-3 py-2">Sin resultados.</p>';
+function renderLista(sel) {
+  const q = norm($('#buscar-est').value);
+  const l = estudiantes().filter(e => !q || norm(e.nombre).includes(q));
+  $('#lista-est').innerHTML = l.length ? l.map(e => '<button class="est" data-estudiante="' + esc(e.nombre) + '"' + (sel && norm(sel) === norm(e.nombre) ? ' aria-current="true"' : '') + '><span>' + esc(e.nombre) + '</span><small>' + e.proyectos.length + ' proy.</small></button>').join('') : '<p style="color:var(--mut);padding:8px">Sin resultados.</p>';
 }
-
 function verEstudiante(nombre) {
-  const e = estudiantes().find(x => norm(x.nombre) === norm(nombre));
-  const caja = document.getElementById('detalle-estudiante');
-  if (!e) { caja.innerHTML = '<p>No se encontró a "' + esc(nombre) + '" en el repositorio.</p>'; return; }
-  const insignias = e.proyectos.reduce((t, x) => t + totalVotos(x.p), 0);
-  const herramientas = [...new Set(e.proyectos.flatMap(x => x.p.herramientas))];
-  const distinciones = e.proyectos.filter(x => x.p.distincion).map(x => x.p.distincion);
-  caja.className = 'lg:col-span-8 glass-panel rounded-2xl p-6';
-  caja.innerHTML =
-    '<div class="flex flex-wrap items-start justify-between gap-4 mb-6">' +
-      '<div><div class="text-xs uppercase tracking-wider text-blue-300 font-semibold mb-1">Portafolio GameLab</div>' +
-      '<h3 class="font-display text-2xl font-bold text-white">' + esc(e.nombre) + '</h3>' +
-      '<p class="text-xs text-slate-400 mt-1">' + e.proyectos.length + ' proyecto(s) · ' + insignias + ' insignias populares</p></div>' +
-      '<button data-copiar="' + esc(enlace('estudiante', e.nombre)) + '" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold"><i class="fa-solid fa-link mr-1.5 text-cyan-400"></i>Copiar enlace del portafolio</button>' +
-    '</div>' +
-    (distinciones.length ? '<div class="flex flex-wrap gap-2 mb-4">' + distinciones.map(d => '<span class="chip border-amber-500/40 text-amber-200"><i class="fa-solid fa-star text-amber-400"></i>' + esc(d) + '</span>').join('') + '</div>' : '') +
-    (herramientas.length ? '<div class="mb-6"><div class="lbl">Herramientas usadas</div><div class="flex flex-wrap gap-1.5">' + herramientas.map(h => '<span class="chip">' + esc(h) + '</span>').join('') + '</div></div>' : '') +
-    '<div class="space-y-3">' + e.proyectos.map(x =>
-      '<div class="bg-slate-950/70 border border-slate-800 rounded-2xl p-4 flex flex-wrap items-center justify-between gap-3">' +
-        '<div><div class="text-[11px] text-cyan-400 font-semibold">' + esc(x.p.semestre) + (x.rol ? ' · Rol: ' + esc(x.rol) : '') + '</div>' +
-        '<div class="font-display font-bold text-white">' + esc(x.p.titulo) + '</div>' +
-        '<div class="text-[11px] text-slate-400">' + esc(x.p.contexto) + ' · ' + esc(x.p.enfoque) + (x.p.cliente ? ' · Cliente: ' + esc(x.p.cliente) : '') + '</div></div>' +
-        '<div class="flex gap-2"><button data-abrir="' + esc(x.p.id) + '" class="px-3 py-2 rounded-xl bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 text-xs font-semibold">Expediente</button>' +
-        '<button data-insignia="' + esc(x.p.id) + '" class="px-3 py-2 rounded-xl bg-amber-500/15 text-amber-300 border border-amber-500/40 text-xs font-semibold"><i class="fa-solid fa-medal"></i></button></div>' +
-      '</div>').join('') + '</div>';
+  const e = estudiantes().find(x => norm(x.nombre) === norm(nombre)); const caja = $('#det-est');
+  if (!e) { caja.textContent = 'No se encontró a "' + nombre + '" en el repositorio.'; return; }
+  renderLista(e.nombre);
+  const her = [...new Set(e.proyectos.flatMap(x => x.p.herramientas))], dist = e.proyectos.filter(x => x.p.distincion).map(x => x.p.distincion);
+  const ins = e.proyectos.reduce((t, x) => t + totalInsignias(x.p), 0);
+  caja.style.color = ''; caja.innerHTML = '<div class="row" style="justify-content:space-between;align-items:flex-start"><div style="flex:2 1 240px"><span class="kicker" style="background:#eff6ff;border-color:#93c5fd;color:#1e3a8a">Portafolio GameLab</span><h2 style="margin:8px 0 2px;font-size:26px">' + esc(e.nombre) + '</h2><span style="color:var(--mut)">' + e.proyectos.length + ' proyecto(s) · ' + ins + ' insignias populares</span></div>' +
+    '<button class="btn sec sm" data-copiar="' + esc(enlace('estudiante', e.nombre)) + '">🔗 Copiar enlace del portafolio</button></div>' +
+    (dist.length ? '<div class="chips" style="margin-top:12px">' + dist.map(d => '<span class="chip am">⭐ ' + esc(d) + '</span>').join('') + '</div>' : '') +
+    (her.length ? '<div style="margin-top:14px"><small style="color:var(--mut);font-weight:700;text-transform:uppercase;letter-spacing:.05em">Herramientas usadas</small><div class="chips" style="margin-top:6px">' + her.map(h => '<span class="chip">' + esc(h) + '</span>').join('') + '</div></div>' : '') +
+    e.proyectos.map(x => '<div class="proj"><div><small style="color:var(--cyan2);font-weight:700">' + esc(x.p.semestre) + (x.rol ? ' · Rol: ' + esc(x.rol) : '') + '</small><div><b>' + esc(x.p.titulo) + '</b></div><small style="color:var(--mut)">' + esc(x.p.contexto) + ' · ' + esc(x.p.enfoque) + (x.p.cliente ? ' · Cliente: ' + esc(x.p.cliente) : '') + '</small></div>' +
+      '<div class="row" style="flex:0 0 auto"><button class="btn sm" data-abrir="' + esc(x.p.id) + '">Expediente</button><button class="btn gold sm" data-insignia="' + esc(x.p.id) + '" aria-label="Insignia">🏅</button></div></div>').join('');
 }
 
 /* ============================================================
@@ -875,91 +857,76 @@ function verEstudiante(nombre) {
    ============================================================ */
 function abrirInsignia(id, desdeEnlace) {
   const p = buscar(id);
-  const caja = document.getElementById('insignia-contenido');
-  document.getElementById('modal-insignia').classList.remove('hidden');
-  if (!p) {
-    caja.innerHTML = '<div class="text-center py-10"><i class="fa-solid fa-circle-xmark text-4xl text-rose-400 mb-3"></i>' +
-      '<p class="text-white font-semibold">Insignia no verificada</p><p class="text-xs text-slate-400 mt-2">El código ' + esc(id) + ' no corresponde a ningún proyecto publicado en el repositorio.</p></div>';
-    return;
-  }
-  const top = CATEGORIAS.map(c => ({ label: c.label, n: p.votos[c.k] || 0 })).sort((a, b) => b.n - a.n)[0];
-  const url = enlace('insignia', p.id);
-  const anio = p.semestre.slice(0, 4);
-  const mes = p.semestre.slice(-2) === '10' ? '7' : '12';
-  const linkedin = 'https://www.linkedin.com/profile/add?startTask=CERTIFICATION_NAME' +
-    '&name=' + encodeURIComponent('Insignia UPAO GameLab: ' + p.titulo) +
-    '&organizationName=' + encodeURIComponent('Universidad Privada Antenor Orrego') +
-    '&issueYear=' + anio + '&issueMonth=' + mes +
-    '&certUrl=' + encodeURIComponent(url) + '&certId=' + encodeURIComponent(p.id);
-
-  caja.innerHTML =
-    (desdeEnlace ? '<div class="mb-4 px-4 py-3 rounded-xl bg-emerald-500/15 border border-emerald-500/40 text-emerald-200 text-xs"><i class="fa-solid fa-circle-check mr-1.5"></i>Insignia verificada: este proyecto está publicado en el repositorio oficial del curso.</div>' : '') +
-    '<div id="insignia-imprimible" class="bg-gradient-to-br from-slate-950 via-slate-900 to-blue-950 text-white rounded-2xl p-6 sm:p-8 border border-cyan-500/40 relative overflow-hidden text-center">' +
-      '<div class="flex items-center justify-between text-[11px] text-slate-400 mb-6"><span class="font-display font-bold text-cyan-400">UPAO GameLab</span><span class="font-mono bg-slate-800/80 px-2 py-0.5 rounded text-slate-300">ID: ' + esc(p.id) + '</span></div>' +
-      '<div class="w-20 h-20 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-amber-400 via-amber-500 to-orange-600 p-0.5 rotate-3"><div class="w-full h-full bg-slate-950 rounded-2xl flex items-center justify-center -rotate-3"><i class="fa-solid fa-trophy text-3xl text-amber-400"></i></div></div>' +
-      '<span class="inline-block px-3 py-1 rounded-full bg-cyan-500/15 border border-cyan-500/30 text-cyan-300 text-[11px] font-semibold mb-2">Proyecto publicado · Taller de Gamificación</span>' +
-      '<h3 class="font-display text-xl sm:text-2xl font-bold text-white mt-1">' + esc(p.titulo) + '</h3>' +
-      '<p class="text-xs sm:text-sm text-amber-300 font-medium mt-2">' + esc(nombres(p).join(' · ')) + '</p>' +
-      '<div class="grid grid-cols-2 gap-3 mt-6 pt-5 border-t border-slate-800 text-xs">' +
-        '<div class="bg-slate-900/80 rounded-xl p-2.5 border border-slate-800"><span class="block text-[10px] uppercase tracking-wider text-slate-400">' + (p.distincion ? 'Distinción docente' : 'Voto popular') + '</span>' +
-          '<span class="font-bold text-emerald-400">' + (p.distincion ? esc(p.distincion) : esc(top.label) + ' (' + top.n + ')') + '</span></div>' +
-        '<div class="bg-slate-900/80 rounded-xl p-2.5 border border-slate-800"><span class="block text-[10px] uppercase tracking-wider text-slate-400">Edición</span><span class="font-bold text-white">Ciclo ' + esc(p.semestre) + '</span></div>' +
-      '</div>' +
-      '<div class="flex items-center justify-center gap-4 mt-5"><div id="qr" class="bg-white p-1.5 rounded-lg"></div>' +
-        '<p class="text-[11px] text-slate-400 text-left max-w-[180px]">Escanea para verificar esta insignia en el repositorio oficial.</p></div>' +
-    '</div>' +
-    '<div class="flex flex-wrap items-center gap-2 mt-5">' +
-      '<button data-copiar="' + esc(url) + '" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium"><i class="fa-solid fa-link mr-1.5 text-cyan-400"></i>Copiar enlace</button>' +
-      '<a href="' + esc(linkedin) + '" target="_blank" rel="noopener noreferrer" class="px-4 py-2 rounded-xl bg-[#0A66C2] hover:opacity-90 text-white text-xs font-semibold"><i class="fa-brands fa-linkedin mr-1.5"></i>Agregar a LinkedIn</a>' +
-      '<button data-accion="imprimir" class="px-4 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-xs font-bold ml-auto"><i class="fa-solid fa-download mr-1.5"></i>Guardar PDF</button>' +
-    '</div>';
-
-  if (typeof QRCode !== 'undefined') {
-    new QRCode(document.getElementById('qr'), { text: url, width: 96, height: 96, colorDark: '#0f172a', colorLight: '#ffffff' });
-  } else {
-    document.getElementById('qr').classList.add('hidden');
-  }
+  if (!p) { modal2('<div class="sheet sm"><div class="sh-top"><b>Insignia</b>' + cerrarBtn(2) + '</div><div class="sh-body" style="text-align:center"><div style="font-size:42px">❌</div><b>Insignia no verificada</b><p style="margin:0;color:var(--mut)">El código ' + esc(id) + ' no corresponde a ningún proyecto publicado en el repositorio.</p></div></div>'); return; }
+  const top = INSIGNIAS.map(c => ({ label: c.label, n: votoDe(p, c.k) })).sort((a, b) => b.n - a.n)[0];
+  const url = enlace('insignia', p.id), anio = p.semestre.slice(0, 4), mes = p.semestre.slice(-2) === '10' ? '7' : '12';
+  const li = 'https://www.linkedin.com/profile/add?startTask=CERTIFICATION_NAME&name=' + encodeURIComponent('Insignia UPAO GameLab: ' + p.titulo) + '&organizationName=' + encodeURIComponent('Universidad Privada Antenor Orrego') + '&issueYear=' + anio + '&issueMonth=' + mes + '&certUrl=' + encodeURIComponent(url) + '&certId=' + encodeURIComponent(p.id);
+  modal2('<div class="sheet sm" style="margin-top:4vh"><div class="sh-top"><b>🏅 Insignia digital · Sello de portafolio</b>' + cerrarBtn(2) + '</div><div class="sh-body">' +
+    (desdeEnlace ? '<div class="verif">✔ Insignia verificada: este proyecto está publicado en el repositorio oficial del curso.</div>' : '') +
+    '<div id="insignia-imprimible" class="badge-card"><div style="display:flex;justify-content:space-between;font-size:13px;color:var(--mut)"><b style="color:var(--cyan2)">UPAO GameLab</b><code>ID: ' + esc(p.id) + '</code></div><div class="trophy">🏆</div>' +
+      '<span class="chip bl">Proyecto publicado · Taller de Gamificación</span><h3 style="margin:10px 0 4px;font-size:22px">' + esc(p.titulo) + '</h3><div style="color:var(--amber);font-weight:600;font-size:15px">' + esc(nombres(p).join(' · ')) + '</div>' +
+      '<div class="two" style="margin-top:16px;text-align:left"><div class="box" style="padding:10px"><small style="color:var(--mut);text-transform:uppercase;font-size:12px">' + (p.distincion ? 'Distinción docente' : 'Voto popular') + '</small><div style="font-weight:700;color:var(--emerald);font-size:15px">' + (p.distincion ? esc(p.distincion) : esc(top.label) + ' (' + top.n + ')') + '</div></div>' +
+      '<div class="box" style="padding:10px"><small style="color:var(--mut);text-transform:uppercase;font-size:12px">Edición</small><div style="font-weight:700;font-size:15px">Ciclo ' + esc(p.semestre) + '</div></div></div>' +
+      '<div style="display:flex;gap:14px;align-items:center;justify-content:center;margin-top:16px"><div id="qr" class="qr"></div><small style="color:var(--mut);max-width:170px;text-align:left">Escanea para verificar esta insignia en el repositorio oficial.</small></div></div>' +
+    '<div class="row"><button class="btn sec sm" data-copiar="' + esc(url) + '">🔗 Copiar enlace</button><a class="btn sm" style="background:#0A66C2;border-color:#0A66C2;color:#fff" href="' + esc(li) + '" target="_blank" rel="noopener noreferrer">Agregar a LinkedIn</a><button class="btn pri sm" data-accion="imprimir">⬇ Guardar PDF</button></div></div></div>');
+  const dibujar = () => { const q = $('#qr'); if (!q) return; if (typeof QRCode !== 'undefined') new QRCode(q, { text: url, width: 96, height: 96, colorDark: '#0f172a', colorLight: '#ffffff' }); else q.parentElement.classList.add('hidden'); };
+  dibujar(); if (typeof QRCode === 'undefined') setTimeout(dibujar, 1200);
 }
+
+/* ============================================================
+   MODALES
+   ============================================================ */
+function cerrarBtn(n) { return '<button class="x" aria-label="Cerrar" data-accion="cerrar' + n + '"><svg viewBox="0 0 24 24">' + ICON.x + '</svg></button>'; }
+function modal2(html) { const o = $('#ov2'); o.innerHTML = html; o.classList.remove('hidden'); o.scrollTop = 0; document.body.style.overflow = 'hidden'; }
+function cerrar(n) {
+  const o = $(n === 2 ? '#ov2' : '#ov'); o.classList.add('hidden'); o.innerHTML = ''; if (n !== 2) delete o.dataset.id;
+  if ($('#ov').classList.contains('hidden') && $('#ov2').classList.contains('hidden')) document.body.style.overflow = '';
+}
+['#ov', '#ov2'].forEach((s, i) => $(s).addEventListener('click', e => { if (e.target.id === s.slice(1)) cerrar(i + 1); }));
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { if (!$('#ov2').classList.contains('hidden')) cerrar(2); else cerrar(1); } });
 
 /* ============================================================
    EVENTOS
    ============================================================ */
 document.addEventListener('click', ev => {
-  const el = ev.target.closest('[data-vista],[data-abrir],[data-votar],[data-insignia],[data-estudiante],[data-copiar],[data-retomar],[data-accion]');
+  const el = ev.target.closest('[data-vista],[data-a],[data-abrir],[data-votar],[data-insignia],[data-estudiante],[data-copiar],[data-retomar],[data-accion]');
   if (!el) return;
   const d = el.dataset;
-  if (d.vista) { cambiarVista(d.vista); return; }
-  if (d.abrir) { document.getElementById('modal-insignia').classList.add('hidden'); abrirProyecto(d.abrir); return; }
-  if (d.votar) { alternarVoto(d.votar, d.cat); return; }
-  if (d.insignia) { abrirInsignia(d.insignia, false); return; }
-  if (d.estudiante) {
-    document.getElementById('modal-proyecto').classList.add('hidden');
-    document.getElementById('modal-insignia').classList.add('hidden');
-    cambiarVista('portafolio'); verEstudiante(d.estudiante); return;
-  }
-  if (d.copiar) { copiar(d.copiar); return; }
-  if (d.retomar) {
-    copiar(d.retomar);
-    toast('ID ' + d.retomar + ' copiado. Pégalo en el campo "ID del proyecto que retoman" del formulario.', 'premio');
+  const card = el.closest('.card'); const idCtx = card ? card.dataset.id : ($('#ov') && !$('#ov').classList.contains('hidden') ? $('#ov').dataset.id : null);
+  if (d.vista) { cerrar(1); cerrar(2); cambiarVista(d.vista); return; }
+  if (d.a) {
+    const id = idCtx; if (!id) return;
+    if (d.a === 'fav') alternarFav(id); else if (d.a === 'like') alternarVoto(id, 'like');
+    else if (d.a === 'tips') abrirProyecto(id, { aConsejos: true }); else if (d.a === 'open') abrirProyecto(id);
+    else if (d.a === 'share') abrirCompartir(id); else if (d.a === 'cmp') alternarComparar(id);
     return;
   }
+  if (d.abrir) { cerrar(2); abrirProyecto(d.abrir); return; }
+  if (d.votar) { if (idCtx) alternarVoto(idCtx, d.votar); return; }
+  if (d.insignia) { abrirInsignia(d.insignia, false); return; }
+  if (d.estudiante) { cerrar(1); cerrar(2); cambiarVista('portafolio'); verEstudiante(d.estudiante); return; }
+  if (d.copiar) { copiar(d.copiar); return; }
+  if (d.retomar) { copiar(d.retomar); toast('ID ' + d.retomar + ' copiado. Pégalo en "ID del proyecto que retoman" del formulario.'); return; }
   switch (d.accion) {
-    case 'mision': toast('Misión: abre ' + META + ' expedientes para ser Juez Invitado y otorgar insignias.', 'premio'); break;
-    case 'limpiar':
-      ['f-buscar', 'f-semestre', 'f-contexto', 'f-entorno', 'f-enfoque', 'f-jugador', 'f-herramienta', 'f-implementacion'].forEach(id => { document.getElementById(id).value = ''; });
-      aplicarFiltros(); break;
-    case 'cerrar-proyecto': document.getElementById('modal-proyecto').classList.add('hidden'); break;
-    case 'cerrar-insignia': document.getElementById('modal-insignia').classList.add('hidden'); break;
-    case 'imprimir': window.print(); break;
+    case 'mision': toast('Misión: abre ' + META + ' expedientes para ser Juez Invitado y otorgar insignias.'); break;
+    case 'cerrar1': cerrar(1); break;
+    case 'cerrar2': cerrar(2); break;
+    case 'arriba': scrollTo({ top: 0, behavior: 'smooth' }); break;
+    case 'imprimir': print(); break;
+    case 'reportar': if (idCtx) abrirReporte(idCtx); break;
   }
 });
-document.getElementById('f-buscar').addEventListener('input', aplicarFiltros);
-document.querySelectorAll('.filtro').forEach(s => s.addEventListener('change', aplicarFiltros));
-document.getElementById('orden-salon').addEventListener('change', renderSalon);
-document.getElementById('buscar-estudiante').addEventListener('input', renderListaEstudiantes);
-document.addEventListener('keydown', ev => {
-  if (ev.key === 'Escape') { document.getElementById('modal-proyecto').classList.add('hidden'); document.getElementById('modal-insignia').classList.add('hidden'); }
-});
+document.addEventListener('click', ev => { if (ev.target.id === 'tipSend') { const id = $('#ov').dataset.id; if (id) enviarConsejo(id); } });
+$('#q').addEventListener('input', filtrar);
+['#fSem', '#fCtx', '#fEnt', '#fEnf', '#fJug', '#fHer', '#fImp'].forEach(s => $(s).addEventListener('change', filtrar));
+$('#fFav').onclick = e => { const b = e.currentTarget; b.setAttribute('aria-pressed', b.getAttribute('aria-pressed') !== 'true'); filtrar(); };
+function limpiar() { $('#q').value = ''; ['#fSem', '#fCtx', '#fEnt', '#fEnf', '#fJug', '#fHer', '#fImp'].forEach(s => { $(s).value = ''; }); $('#fFav').setAttribute('aria-pressed', 'false'); filtrar(); }
+$('#fClear').onclick = limpiar; $('#vacioClear').onclick = limpiar;
+$('#more').onclick = () => cargarMas();
+$('#orden').addEventListener('change', renderSalon);
+$('#buscar-est').addEventListener('input', () => renderLista());
+$('#cmpClear').onclick = () => { cmp.splice(0).forEach(id => refrescarTarjeta(id, 'cmp')); barraComparar(); };
+$('#cmpGo').onclick = verComparacion;
 
 iniciar();
 </script>
